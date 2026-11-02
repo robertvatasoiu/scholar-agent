@@ -30,6 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initSettingsUI();
   initEventListeners();
   checkBackendHealth();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const q = urlParams.get('q');
+  if (q) {
+    const searchInput = document.getElementById('search-query');
+    if (searchInput) searchInput.value = q;
+    executeSearch(q);
+  }
 });
 
 /* ==========================================================================
