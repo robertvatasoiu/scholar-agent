@@ -21,6 +21,8 @@
    - **Opțional (Gemini AI):** Poți adăuga în setări propria cheie gratuită Google Gemini pentru a genera recenzii narative exhaustive de literatură.
 6. **Export BibTeX:**
    - Exportă citarea oricărui articol individual sau descarcă un fișier `.bib` cu toate rezultatele căutării pentru Mendeley, Zotero sau LaTeX.
+7. **Recuperare Automată de Abstracte pentru Lucrări Paywalled:**
+   - Pentru articolele comerciale unde indexul inițial nu include abstractul complet, agentul pornește automat un mecanism de *fallback waterfall*: interoghează consecutiv **Europe PMC** (index public gratuit), **Crossref Metadata** (depuneri XML oficiale de la edituri), **Semantic Scholar Graph API** și opțional **Elsevier Scopus API** / **Springer Nature API**.
 
 ---
 

@@ -17,6 +17,8 @@ const state = {
     ezproxy: localStorage.getItem('scholar_ezproxy') || '',
     geminiKey: localStorage.getItem('scholar_gemini_key') || '',
     s2Key: localStorage.getItem('scholar_s2_key') || '',
+    elsevierKey: localStorage.getItem('scholar_elsevier_key') || '',
+    springerKey: localStorage.getItem('scholar_springer_key') || '',
     email: localStorage.getItem('scholar_email') || 'academic.researcher@scholaragent.app'
   }
 };
@@ -86,6 +88,16 @@ function initEventListeners() {
     if (e.target.id === 'paper-modal') closeModal();
   });
 
+  // Force Abstract re-fetch in modal
+  const btnForceAbstract = document.getElementById('btn-force-abstract');
+  if (btnForceAbstract) {
+    btnForceAbstract.addEventListener('click', () => {
+      if (state.selectedPaper) {
+        fetchAbstractWaterfall(state.selectedPaper, true);
+      }
+    });
+  }
+
   // BibTeX Copy in modal
   document.getElementById('btn-copy-bibtex').addEventListener('click', () => {
     if (state.selectedPaper) {
@@ -109,12 +121,16 @@ function initSettingsUI() {
   const inputEzproxy = document.getElementById('setting-ezproxy');
   const inputGemini = document.getElementById('setting-gemini-key');
   const inputS2 = document.getElementById('setting-s2-key');
+  const inputElsevier = document.getElementById('setting-elsevier-key');
+  const inputSpringer = document.getElementById('setting-springer-key');
   const inputEmail = document.getElementById('setting-polite-email');
 
   // Populate existing
   inputEzproxy.value = state.settings.ezproxy;
   inputGemini.value = state.settings.geminiKey;
   inputS2.value = state.settings.s2Key;
+  if (inputElsevier) inputElsevier.value = state.settings.elsevierKey;
+  if (inputSpringer) inputSpringer.value = state.settings.springerKey;
   inputEmail.value = state.settings.email;
 
   btnOpen.addEventListener('click', () => {
@@ -133,11 +149,16 @@ function initSettingsUI() {
     state.settings.ezproxy = inputEzproxy.value.trim();
     state.settings.geminiKey = inputGemini.value.trim();
     state.settings.s2Key = inputS2.value.trim();
+    state.settings.elsevierKey = inputElsevier ? inputElsevier.value.trim() : '';
+    state.settings.springerKey = inputSpringer ? inputSpringer.value.trim() : '';
     state.settings.email = inputEmail.value.trim() || 'academic.researcher@scholaragent.app';
 
     localStorage.setItem('scholar_ezproxy', state.settings.ezproxy);
     localStorage.setItem('scholar_gemini_key', state.settings.geminiKey);
     localStorage.setItem('scholar_s2_key', state.settings.s2Key);
+    localStorage.setItem('scholar_elsevier_key', state.settings.elsevierKey);
+    localStorage.setItem('scholar_springer_key', state.settings.springerKey);
+    localStorage.setItem('scholar_email', state.settings.email);
     localStorage.setItem('scholar_email', state.settings.email);
 
     settingsModal.classList.add('hidden');
@@ -539,6 +560,9 @@ async function openPaperModal(paperId) {
   // Unpaywall check
   verifyUnpaywall(paper);
 
+  // Auto-recover abstract if missing or sparse
+  fetchAbstractWaterfall(paper, false);
+
   modal.classList.remove('hidden');
   if (window.lucide) window.lucide.createIcons();
 }
@@ -546,6 +570,161 @@ async function openPaperModal(paperId) {
 function closeModal() {
   document.getElementById('paper-modal').classList.add('hidden');
   state.selectedPaper = null;
+}
+
+/**
+ * Recuperare Automată Abstracte din API-uri Multiple (Europe PMC, Crossref, S2, Elsevier, Springer)
+ * Indispensabil pentru lucrările paywalled unde indexul inițial nu a inclus abstractul complet.
+ */
+async function fetchAbstractWaterfall(paper, force = false) {
+  const abstractEl = document.getElementById('modal-abstract');
+  const sourceEl = document.getElementById('modal-abstract-source');
+  const btnForce = document.getElementById('btn-force-abstract');
+
+  const hasValidAbstract = paper.abstract && 
+    !paper.abstract.toLowerCase().includes('nu este disponibil') && 
+    !paper.abstract.toLowerCase().includes('nedisponibil') &&
+    paper.abstract.trim().length > 80;
+
+  if (hasValidAbstract && !force) {
+    sourceEl.textContent = `Sursă: ${paper.abstractSource || 'Index Principal'}`;
+    sourceEl.className = 'text-[10px] px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-brand-400 font-mono';
+    sourceEl.classList.remove('hidden');
+    return;
+  }
+
+  if (!paper.doi) {
+    if (!hasValidAbstract) {
+      abstractEl.textContent = 'Abstractul nu este disponibil și nu există un DOI pentru a interoga alte API-uri.';
+      sourceEl.classList.add('hidden');
+    }
+    return;
+  }
+
+  // UI loading feedback
+  sourceEl.innerHTML = '<span class="animate-pulse text-brand-400">Scanare API-uri abstract...</span>';
+  sourceEl.className = 'text-[10px] px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-brand-400 font-mono';
+  sourceEl.classList.remove('hidden');
+  if (btnForce) btnForce.classList.add('opacity-50', 'pointer-events-none');
+
+  const cleanDoi = paper.doi.trim();
+  let recoveredAbstract = null;
+  let sourceName = null;
+
+  try {
+    // 1. Încearcă Europe PMC API (CORS deschis, gratuit, indexează milioane de abstracte chiar și pentru publicații paywalled)
+    try {
+      const epmcQuery = encodeURIComponent(`DOI:"${cleanDoi}"`);
+      const epmcRes = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${epmcQuery}&format=json&resultType=core`);
+      if (epmcRes.ok) {
+        const epmcData = await epmcRes.json();
+        const res = epmcData.resultList?.result?.[0];
+        if (res && res.abstractText && res.abstractText.trim().length > 50) {
+          recoveredAbstract = res.abstractText.replace(/<[^>]*>/g, '').trim();
+          sourceName = 'Europe PMC (Public)';
+        }
+      }
+    } catch (e) {
+      console.warn('Europe PMC abstract lookup failed:', e);
+    }
+
+    // 2. Dacă nu a găsit, încearcă Crossref REST API (multe edituri depun abstractul în metadata Crossref ca JATS XML)
+    if (!recoveredAbstract) {
+      try {
+        const crRes = await fetch(`https://api.crossref.org/works/${encodeURIComponent(cleanDoi)}?mailto=${encodeURIComponent(state.settings.email)}`);
+        if (crRes.ok) {
+          const crData = await crRes.json();
+          const rawAbstract = crData.message?.abstract;
+          if (rawAbstract && rawAbstract.trim().length > 50) {
+            recoveredAbstract = rawAbstract
+              .replace(/<jats:title>[^<]*<\/jats:title>/gi, '')
+              .replace(/<[^>]*>/g, '')
+              .replace(/\s+/g, ' ')
+              .trim();
+            sourceName = 'Crossref Metadata';
+          }
+        }
+      } catch (e) {
+        console.warn('Crossref abstract lookup failed:', e);
+      }
+    }
+
+    // 3. Dacă este articol Elsevier (DOI 10.1016/...) și utilizatorul a configurat cheie Elsevier API în setări
+    if (!recoveredAbstract && state.settings.elsevierKey && cleanDoi.startsWith('10.1016/')) {
+      try {
+        const elsRes = await fetch(`https://api.elsevier.com/content/article/doi/${encodeURIComponent(cleanDoi)}?apiKey=${encodeURIComponent(state.settings.elsevierKey)}&httpAccept=application/json`);
+        if (elsRes.ok) {
+          const elsData = await elsRes.json();
+          const core = elsData['full-text-retrieval-response']?.coredata || elsData['abstracts-retrieval-response']?.coredata;
+          const desc = core?.['dc:description'];
+          if (desc && desc.trim().length > 50) {
+            recoveredAbstract = desc.replace(/<[^>]*>/g, '').trim();
+            sourceName = 'Elsevier Scopus API';
+          }
+        }
+      } catch (e) {
+        console.warn('Elsevier abstract lookup failed:', e);
+      }
+    }
+
+    // 4. Dacă utilizatorul a configurat Springer API key
+    if (!recoveredAbstract && state.settings.springerKey) {
+      try {
+        const spRes = await fetch(`https://api.springernature.com/meta/v2/json?q=doi:${encodeURIComponent(cleanDoi)}&api_key=${encodeURIComponent(state.settings.springerKey)}`);
+        if (spRes.ok) {
+          const spData = await spRes.json();
+          const rec = spData.records?.[0];
+          if (rec?.abstract && rec.abstract.trim().length > 50) {
+            recoveredAbstract = rec.abstract.trim();
+            sourceName = 'Springer Nature API';
+          }
+        }
+      } catch (e) {
+        console.warn('Springer abstract lookup failed:', e);
+      }
+    }
+
+    // 5. Încearcă Semantic Scholar Graph API
+    if (!recoveredAbstract) {
+      try {
+        const s2Headers = state.settings.s2Key ? { 'x-api-key': state.settings.s2Key } : {};
+        const s2Res = await fetch(`https://api.semanticscholar.org/graph/v1/paper/DOI:${encodeURIComponent(cleanDoi)}?fields=abstract`, {
+          headers: s2Headers
+        });
+        if (s2Res.ok) {
+          const s2Data = await s2Res.json();
+          if (s2Data.abstract && s2Data.abstract.trim().length > 50) {
+            recoveredAbstract = s2Data.abstract.trim();
+            sourceName = 'Semantic Scholar';
+          }
+        }
+      } catch (e) {
+        console.warn('Semantic Scholar abstract lookup failed:', e);
+      }
+    }
+
+    // Rezultat final
+    if (recoveredAbstract) {
+      paper.abstract = recoveredAbstract;
+      paper.abstractSource = sourceName;
+      abstractEl.textContent = recoveredAbstract;
+      sourceEl.textContent = `Sursă: ${sourceName}`;
+      sourceEl.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono';
+      showToast(`Abstract recuperat cu succes din ${sourceName}!`);
+    } else {
+      if (!hasValidAbstract) {
+        abstractEl.textContent = 'Abstractul nu este disponibil liber prin Europe PMC, Crossref sau Semantic Scholar pentru acest articol paywalled. Recomandăm deschiderea paginii oficiale a publisherului sau adăugarea unei chei API Elsevier/Springer în Setări.';
+      }
+      sourceEl.textContent = 'Sursă: Negăsit în API-uri libere';
+      sourceEl.className = 'text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono';
+    }
+
+  } catch (err) {
+    console.error('Eroare generală la recuperare abstract:', err);
+  } finally {
+    if (btnForce) btnForce.classList.remove('opacity-50', 'pointer-events-none');
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 /**
