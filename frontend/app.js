@@ -477,8 +477,8 @@ function renderPaperCards() {
 
   if (!state.filteredPapers.length) {
     container.innerHTML = `
-      <div class="text-center py-12 px-4 rounded-lg border border-zinc-800 text-zinc-400">
-        <p class="text-xs text-zinc-400">Nu a fost găsit niciun articol cu acest filtru.</p>
+      <div class="text-center py-12 px-4 rounded border border-slate-200 bg-white text-slate-500">
+        <p class="text-xs">Nu a fost găsit niciun articol cu filtrul selectat.</p>
       </div>
     `;
     if (window.lucide) window.lucide.createIcons();
@@ -486,66 +486,69 @@ function renderPaperCards() {
   }
 
   container.innerHTML = state.filteredPapers.map((paper, idx) => {
-    const oaBadge = paper.isOpenAccess
-      ? `<span class="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium"><i data-lucide="unlock" class="w-3 h-3"></i> Open Access</span>`
-      : `<span class="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-medium"><i data-lucide="lock" class="w-3 h-3 text-zinc-500"></i> Paywalled</span>`;
+    const oaStatusText = paper.isOpenAccess
+      ? `<span class="text-emerald-700 font-semibold">[Open Access &bull; PDF Gratuit]</span>`
+      : `<span class="text-slate-500">[Paywalled]</span>`;
 
-    const semanticScoreBadge = paper.semanticScore !== null && paper.semanticScore !== undefined
-      ? `<span class="text-[11px] px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/80 text-zinc-300 font-mono">
-           Relevanță: ${Math.round(paper.semanticScore * 100)}%
-         </span>`
+    const semanticScoreText = paper.semanticScore !== null && paper.semanticScore !== undefined
+      ? `<span class="text-slate-600 font-mono text-[11px] bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">Relevanță: ${Math.round(paper.semanticScore * 100)}%</span>`
       : '';
-
-    const conceptsHtml = (paper.concepts || []).slice(0, 3).map(c => 
-      `<span class="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 text-[11px]">${escapeHtml(c)}</span>`
-    ).join('');
 
     const formattedAuthors = paper.authors.slice(0, 4).join(', ') + (paper.authors.length > 4 ? ' et al.' : '');
 
     return `
-      <article id="paper-card-${paper.id}" class="paper-item space-y-2.5 cursor-pointer" onclick="openPaperModal('${paper.id}')">
-        <div class="flex items-start justify-between gap-3">
-          <div class="space-y-1 flex-1">
-            <div class="flex items-center gap-2 flex-wrap text-xs">
-              <span class="text-zinc-500 font-mono text-[11px]">#${idx+1}</span>
-              ${oaBadge}
-              ${semanticScoreBadge}
-              <span class="text-zinc-500">&bull;</span>
-              <span class="text-zinc-400">${paper.year}</span>
-              <span class="text-zinc-500">&bull;</span>
-              <span class="text-zinc-400">${paper.citations.toLocaleString()} citări</span>
-            </div>
-            <h3 class="text-sm font-semibold text-zinc-100 hover:text-blue-400 transition leading-snug">
+      <article id="paper-card-${paper.id}" class="paper-entry space-y-2">
+        <div class="space-y-1">
+          <h3 class="leading-snug">
+            <a href="javascript:void(0)" onclick="openPaperModal('${paper.id}')" class="paper-title">
               ${escapeHtml(paper.title)}
-            </h3>
-            <p class="text-xs text-zinc-400">
-              <span>${escapeHtml(formattedAuthors)}</span>
-              <span class="text-zinc-600">&bull;</span>
-              <span class="text-zinc-300">${escapeHtml(paper.venue)}</span>
-              ${paper.doi ? `<span class="text-zinc-600">&bull;</span> <span class="font-mono text-[11px] text-zinc-500">${escapeHtml(paper.doi)}</span>` : ''}
-            </p>
+            </a>
+          </h3>
+
+          <!-- Academic citation line (Google Scholar style) -->
+          <div class="paper-citation-line flex items-center gap-1.5 flex-wrap">
+            ${oaStatusText}
+            <span class="text-slate-700 font-medium">${escapeHtml(formattedAuthors)}</span>
+            <span class="text-slate-400">&mdash;</span>
+            <span class="text-slate-600 italic">${escapeHtml(paper.venue)} (${paper.year})</span>
+            ${paper.doi ? `<span class="text-slate-400">&bull;</span> <span class="text-slate-500 font-mono text-xs">doi:${escapeHtml(paper.doi)}</span>` : ''}
+            ${paper.citations > 0 ? `<span class="text-slate-400">&bull;</span> <span class="text-slate-600 font-medium">Citat de ${paper.citations.toLocaleString()} ori</span>` : ''}
+            ${semanticScoreText}
           </div>
         </div>
 
-        <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+        <!-- Abstract snippet -->
+        <p class="paper-snippet leading-relaxed">
           ${escapeHtml(paper.abstract)}
         </p>
 
-        <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/80 text-xs">
-          <div class="flex items-center gap-1 flex-wrap">
-            ${conceptsHtml}
-          </div>
-          
-          <div class="flex items-center gap-2">
+        <!-- Academic action bar -->
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+          <div class="flex items-center gap-2 flex-wrap">
             ${paper.isOpenAccess && paper.oaPdfUrl ? `
-              <a href="${paper.oaPdfUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 text-xs transition flex items-center gap-1 font-medium">
-                <i data-lucide="file-text" class="w-3 h-3"></i> PDF
+              <a href="${paper.oaPdfUrl}" target="_blank" rel="noopener noreferrer" class="paper-action-link primary">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Descarcă PDF</span>
               </a>
             ` : ''}
-            <button class="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition">
-              <span>Detalii</span>
-              <i data-lucide="chevron-right" class="w-3 h-3"></i>
+            ${paper.landingUrl ? `
+              <a href="${paper.landingUrl}" target="_blank" rel="noopener noreferrer" class="paper-action-link">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                <span>Publisher / DOI</span>
+              </a>
+            ` : ''}
+            <button onclick="copySingleBibTeX('${paper.id}')" class="paper-action-link">
+              <i data-lucide="quote" class="w-3.5 h-3.5"></i>
+              <span>Citează</span>
             </button>
+            <button onclick="openPaperModal('${paper.id}')" class="paper-action-link">
+              <i data-lucide="info" class="w-3.5 h-3.5"></i>
+              <span>Abstract & Detalii</span>
+            </button>
+          </div>
+
+          <div class="text-[11px] text-slate-400 hidden sm:block">
+            Sursă: ${escapeHtml(paper.abstractSource || 'Index')}
           </div>
         </div>
       </article>
@@ -553,6 +556,16 @@ function renderPaperCards() {
   }).join('');
 
   if (window.lucide) window.lucide.createIcons();
+}
+
+function copySingleBibTeX(paperId) {
+  const paper = state.papers.find(p => p.id === paperId);
+  if (paper) {
+    const bib = generateBibTeX(paper);
+    navigator.clipboard.writeText(bib).then(() => {
+      showToast('Referința BibTeX a fost copiată!');
+    });
+  }
 }
 
 /* ==========================================================================
@@ -571,13 +584,13 @@ function openPaperModal(paperId) {
   document.getElementById('modal-citations-badge').textContent = `${paper.citations.toLocaleString()} Citări`;
   document.getElementById('modal-venue').textContent = paper.venue || 'Nespecificat';
   document.getElementById('modal-publisher').textContent = paper.publisher || 'Nespecificat';
-  document.getElementById('modal-doi').textContent = paper.doi || 'Fără DOI';
+  document.getElementById('modal-doi').textContent = paper.doi ? `doi:${paper.doi}` : 'Fără DOI';
   document.getElementById('modal-abstract').textContent = paper.abstract;
 
   // Semantic Score badge
   const semBadge = document.getElementById('modal-semantic-badge');
   if (paper.semanticScore !== null && paper.semanticScore !== undefined) {
-    semBadge.textContent = `Relevanță RAG: ${Math.round(paper.semanticScore * 100)}%`;
+    semBadge.textContent = `Relevanță: ${Math.round(paper.semanticScore * 100)}%`;
     semBadge.classList.remove('hidden');
   } else {
     semBadge.classList.add('hidden');
@@ -587,16 +600,10 @@ function openPaperModal(paperId) {
   const sourceEl = document.getElementById('modal-abstract-source');
   sourceEl.textContent = `Sursă: ${paper.abstractSource || 'Index'}`;
 
-  // Concepts
-  const conceptsContainer = document.getElementById('modal-concepts');
-  conceptsContainer.innerHTML = (paper.concepts || []).map(c => 
-    `<span class="px-2.5 py-1 rounded-md bg-surface-950 text-slate-300 border border-slate-800 text-xs font-medium">${escapeHtml(c)}</span>`
-  ).join('') || '<span class="text-xs text-slate-500">Nespecificate</span>';
-
   // Badges
   document.getElementById('modal-oa-badge').innerHTML = paper.isOpenAccess
-    ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i data-lucide="unlock" class="w-3 h-3"></i> Open Access (${paper.oaStatus})</span>`
-    : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"><i data-lucide="lock" class="w-3 h-3"></i> Paywalled</span>`;
+    ? `<span class="text-emerald-700 font-semibold text-xs">[Open Access &bull; ${paper.oaStatus}]</span>`
+    : `<span class="text-slate-600 font-medium text-xs">[Paywalled / Abonament]</span>`;
 
   // Buttons
   const btnDownloadPdf = document.getElementById('modal-btn-download-pdf');
@@ -745,8 +752,8 @@ function showToast(message) {
 
   const toast = document.createElement('div');
   toast.id = 'scholar-toast';
-  toast.className = 'fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl bg-slate-900 border border-brand-500/50 text-white text-xs shadow-2xl flex items-center gap-2 animate-fade-in';
-  toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-brand-400"></i><span>${escapeHtml(message)}</span>`;
+  toast.className = 'fixed bottom-5 right-5 z-50 px-3.5 py-2.5 rounded bg-slate-900 text-white text-xs shadow-md border border-slate-700 flex items-center gap-2 animate-fade-in';
+  toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-blue-400"></i><span>${escapeHtml(message)}</span>`;
   document.body.appendChild(toast);
   if (window.lucide) window.lucide.createIcons();
 

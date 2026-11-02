@@ -1,104 +1,166 @@
-/* ScholarAgent — Clean Minimalist Academic UI */
+/* ScholarAgent — Clean Academic Design System (Inspired by Google Scholar, OpenAlex & PubMed) */
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.15s ease-out forwards;
-  }
+:root {
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --link-blue: #1d4ed8;
+  --border-color: #e2e8f0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Minimalist scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Paper Search Result Entry (Classic Academic Layout) */
+.paper-entry {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.paper-entry:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 3px;
+.paper-entry.highlighted {
+  border-color: #2563eb;
+  background-color: #f0f7ff;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+/* Paper Title Link */
+.paper-title {
+  color: #1e40af;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
 }
 
-/* Clean Filter Tabs */
-.filter-btn {
+.paper-title:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Citation Line (Green/Slate Academic Line like Google Scholar) */
+.paper-citation-line {
+  color: #047857; /* Forest green */
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.paper-meta-text {
+  color: #64748b;
+}
+
+/* Abstract Snippet */
+.paper-snippet {
+  color: #334155;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+/* Action Links */
+.paper-action-link {
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+  transition: all 0.12s ease;
+}
+
+.paper-action-link:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.paper-action-link.primary {
+  color: #065f46;
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+  font-weight: 600;
+}
+
+.paper-action-link.primary:hover {
+  background-color: #d1fae5;
+}
+
+/* Filter Tab Buttons */
+.tab-btn {
   font-size: 0.8125rem;
   padding: 0.35rem 0.75rem;
-  border-radius: 0.375rem;
-  color: #a1a1aa;
-  transition: all 0.12s ease;
+  border-radius: 4px;
+  color: #475569;
+  background: transparent;
   border: 1px solid transparent;
-}
-
-.filter-btn:hover {
-  color: #f4f4f5;
-  background-color: #27272a;
-}
-
-.filter-btn.active {
-  color: #f4f4f5;
-  background-color: #27272a;
-  border-color: #3f3f46;
   font-weight: 500;
+  transition: all 0.12s ease;
 }
 
-/* Clean Paper List Item */
-.paper-item {
-  border: 1px solid #27272a;
-  background-color: #121214;
-  border-radius: 0.5rem;
-  padding: 1.125rem;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+.tab-btn:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
 }
 
-.paper-item:hover {
-  border-color: #3f3f46;
-  background-color: #18181b;
+.tab-btn.active {
+  color: #0f172a;
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.paper-item.highlighted {
-  border-color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.04);
+/* Clean Citation Chip in RAG Answers */
+.citation-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.12s ease;
 }
 
-/* Typography for RAG / Markdown results */
+.citation-chip:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* Markdown prose rendering */
 .prose {
-  color: #d4d4d8;
-  font-size: 0.875rem;
+  color: #334155;
+  font-size: 0.84rem;
   line-height: 1.6;
 }
 
 .prose h1, .prose h2, .prose h3 {
-  color: #fafafa;
+  color: #0f172a;
   font-weight: 600;
   margin-top: 0.75rem;
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.35rem;
 }
 
-.prose h3 {
-  font-size: 0.9375rem;
-  color: #e4e4e7;
-}
+.prose h3 { font-size: 0.95rem; }
 
-.prose p {
-  margin-bottom: 0.5rem;
-}
+.prose p { margin-bottom: 0.5rem; }
 
 .prose ul, .prose ol {
   margin-left: 1.25rem;
@@ -106,49 +168,24 @@
   list-style-type: disc;
 }
 
-.prose li {
-  margin-bottom: 0.25rem;
-}
+.prose li { margin-bottom: 0.25rem; }
 
-.prose strong {
-  color: #f4f4f5;
-  font-weight: 600;
-}
+.prose strong { color: #0f172a; font-weight: 600; }
 
 .prose blockquote {
-  border-left: 2px solid #3f3f46;
+  border-left: 3px solid #cbd5e1;
   padding-left: 0.75rem;
-  color: #a1a1aa;
+  color: #475569;
+  font-style: italic;
   margin: 0.5rem 0;
 }
 
 .prose code {
-  background: #27272a;
+  background: #f1f5f9;
   padding: 0.1rem 0.3rem;
-  border-radius: 0.25rem;
+  border-radius: 3px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.8em;
-  color: #e4e4e7;
-}
-
-/* Citation Chip */
-.citation-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.1rem 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #60a5fa;
-  background-color: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 0.25rem;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.12s ease;
-}
-
-.citation-chip:hover {
-  background-color: rgba(59, 130, 246, 0.2);
-  border-color: #60a5fa;
-  color: #93c5fd;
+  font-size: 0.82em;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
 }

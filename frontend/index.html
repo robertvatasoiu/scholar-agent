@@ -1,29 +1,13 @@
 <!DOCTYPE html>
-<html lang="ro" class="dark">
+<html lang="ro">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ScholarAgent — Căutare Academică & RAG pe Abstracte</title>
-  <meta name="description" content="Motor de căutare și analiză semantică pentru literatură științifică Open Access și Paywalled (IEEE, Elsevier, OpenAlex, Unpaywall).">
+  <meta name="description" content="Motor de căutare și analiză semantică pentru literatură științifică (IEEE Xplore, Elsevier, OpenAlex, Crossref, Unpaywall).">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            zinc: {
-              850: '#1f1f23',
-              900: '#18181b',
-              950: '#09090b',
-            }
-          }
-        }
-      }
-    }
-  </script>
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -33,38 +17,38 @@
 
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased text-sm">
+<body class="bg-slate-50 text-slate-900 min-h-screen font-sans antialiased text-sm">
 
-  <!-- Minimalist Header -->
-  <header class="border-b border-zinc-800 bg-zinc-900/90 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+  <!-- Clean Academic Header -->
+  <header class="border-b border-slate-200 bg-white sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="#" class="flex items-center gap-2 text-zinc-100 font-semibold tracking-tight hover:text-white">
-          <i data-lucide="book-marked" class="w-4 h-4 text-blue-400"></i>
+        <a href="#" class="flex items-center gap-2 text-slate-900 font-bold text-base tracking-tight hover:text-blue-700">
+          <i data-lucide="graduation-cap" class="w-5 h-5 text-blue-700"></i>
           <span>ScholarAgent</span>
         </a>
-        <span class="text-zinc-500 text-xs hidden sm:inline">|</span>
-        <span class="text-xs text-zinc-400 hidden sm:inline">Academic Literature & RAG</span>
+        <span class="text-slate-300 text-xs hidden sm:inline">|</span>
+        <span class="text-xs text-slate-500 hidden sm:inline">Academic Literature Explorer</span>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2.5">
         <!-- Status indicator -->
-        <div id="backend-status-badge" class="flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-800 border border-zinc-700/60 text-[11px] text-zinc-400">
-          <span id="backend-status-dot" class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+        <div id="backend-status-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-600">
+          <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
           <span id="backend-status-text">Verificare backend...</span>
         </div>
 
-        <button id="btn-export-all-bib" title="Exportă toate referințele în format BibTeX" class="hidden items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs text-zinc-300 transition">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+        <button id="btn-export-all-bib" title="Exportă toate referințele în format BibTeX" class="hidden items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-medium text-slate-700 transition">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500"></i>
           <span>BibTeX</span>
         </button>
 
-        <button id="btn-open-settings" class="flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs text-zinc-300 transition">
-          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        <button id="btn-open-settings" class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-medium text-slate-700 transition">
+          <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-500"></i>
           <span>Setări</span>
         </button>
 
-        <a href="https://github.com/robertvatasoiu/scholar-agent" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition" title="GitHub">
+        <a href="https://github.com/robertvatasoiu/scholar-agent" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition" title="GitHub">
           <i data-lucide="github" class="w-4 h-4"></i>
         </a>
       </div>
@@ -72,92 +56,93 @@
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+  <main class="max-w-5xl mx-auto px-4 py-6 space-y-5">
 
-    <!-- Search Section -->
-    <section class="space-y-3">
-      <form id="search-form" class="space-y-2">
-        <div class="relative flex items-center">
-          <i data-lucide="search" class="w-4 h-4 text-zinc-400 absolute left-3.5 pointer-events-none"></i>
-          <input 
-            type="text" 
-            id="search-query" 
-            placeholder="Caută subiect, DOI, titlu sau concepte (ex: 'transformer attention medical imaging' sau 'reinforcement learning robotics')"
-            class="w-full pl-10 pr-28 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none focus:border-blue-500 transition"
-            required
-            autocomplete="off"
-          />
+    <!-- Search Box (Clean Google Scholar / PubMed Style) -->
+    <section class="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-sm space-y-3">
+      <form id="search-form" class="space-y-2.5">
+        <div class="flex flex-col sm:flex-row gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none"></i>
+            <input 
+              type="text" 
+              id="search-query" 
+              placeholder="Introdu o temă de cercetare, cuvinte cheie sau un DOI (ex: 'deep reinforcement learning robotics')"
+              class="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition"
+              required
+              autocomplete="off"
+            />
+          </div>
           <button 
             type="submit" 
             id="btn-search"
-            class="absolute right-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-md transition"
+            class="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white font-medium text-sm rounded transition shadow-sm"
           >
-            Caută
+            Căutare
           </button>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 pt-0.5">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 pt-1">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-zinc-500">Surse:</span>
-            <span class="text-zinc-300 font-medium">IEEE Xplore</span>
-            <span class="text-zinc-600">&bull;</span>
-            <span class="text-zinc-300 font-medium">OpenAlex</span>
-            <span class="text-zinc-600">&bull;</span>
-            <span class="text-zinc-300 font-medium">Crossref</span>
-            <span class="text-zinc-600">&bull;</span>
-            <span class="text-zinc-300 font-medium">Unpaywall</span>
+            <span class="font-medium text-slate-600">Surse indexate:</span>
+            <span>IEEE Xplore</span>
+            <span class="text-slate-300">&bull;</span>
+            <span>OpenAlex (Global)</span>
+            <span class="text-slate-300">&bull;</span>
+            <span>Crossref</span>
+            <span class="text-slate-300">&bull;</span>
+            <span>Unpaywall</span>
           </div>
 
-          <label class="cursor-pointer inline-flex items-center gap-1.5 text-zinc-300 hover:text-white select-none">
-            <input type="checkbox" id="chk-semantic-rerank" checked class="rounded border-zinc-700 bg-zinc-900 text-blue-600 focus:ring-0 w-3.5 h-3.5">
-            <span>Reordonare semantică (Vector)</span>
+          <label class="cursor-pointer inline-flex items-center gap-1.5 text-slate-700 select-none">
+            <input type="checkbox" id="chk-semantic-rerank" checked class="rounded border-slate-300 text-blue-700 focus:ring-0 w-3.5 h-3.5">
+            <span class="font-medium">Reordonare semantică (Vector Similarity)</span>
           </label>
         </div>
 
-        <!-- Quick Suggestions -->
-        <div class="flex items-center gap-1.5 flex-wrap text-xs pt-1 text-zinc-400">
-          <span class="text-zinc-500">Exemple:</span>
-          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 transition" data-topic="Agentic AI workflows and reasoning architectures">Agentic AI Workflows</button>
-          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 transition" data-topic="Graph Neural Networks in Drug Discovery">GNN Drug Discovery</button>
-          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 transition" data-topic="Quantum error correction surface codes">Quantum Error Correction</button>
-          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 transition" data-topic="Retrieval-Augmented Generation evaluation metrics">RAG Evaluation</button>
+        <!-- Quick Topics -->
+        <div class="flex items-center gap-1.5 flex-wrap text-xs pt-1 text-slate-500 border-t border-slate-100">
+          <span>Sugestii:</span>
+          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-topic="Agentic AI workflows and reasoning architectures">Agentic AI Workflows</button>
+          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-topic="Graph Neural Networks in Drug Discovery">GNN Drug Discovery</button>
+          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-topic="Quantum error correction surface codes">Quantum Error Correction</button>
+          <button type="button" class="preset-pill px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-topic="Retrieval-Augmented Generation evaluation metrics">RAG Evaluation</button>
         </div>
       </form>
     </section>
 
-    <!-- Collapsible RAG Question-Answering Box -->
-    <section id="rag-qa-section" class="hidden rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
-      <div class="flex items-center justify-between">
+    <!-- RAG Question-Answering Box (Structured Research Notebook Style) -->
+    <section id="rag-qa-section" class="hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <div class="flex items-center gap-2">
-          <i data-lucide="help-circle" class="w-4 h-4 text-blue-400"></i>
-          <h3 class="font-medium text-zinc-200 text-xs uppercase tracking-wider">RAG pe Abstracte — Întreabă Corpusul de Lucrări</h3>
+          <i data-lucide="help-circle" class="w-4 h-4 text-blue-700"></i>
+          <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">RAG pe Abstracte — Pune o întrebare corpusului</h3>
         </div>
-        <span class="text-[11px] text-zinc-500">Interogare semantică directă din abstractele afișate</span>
+        <span class="text-[11px] text-slate-500">Extrage evidențe direct din abstractele lucrărilor</span>
       </div>
 
       <form id="rag-ask-form" class="flex gap-2">
         <input 
           type="text" 
           id="rag-question-input"
-          placeholder="Ex: 'Ce benchmark-uri s-au folosit?' sau 'Ce limitări sunt semnalate?'"
-          class="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-md text-zinc-100 placeholder-zinc-500 text-xs focus:outline-none focus:border-blue-500"
+          placeholder="Ex: 'Ce seturi de date sau benchmark-uri au fost folosite?' sau 'Care sunt limitările raportate?'"
+          class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:border-blue-600 focus:bg-white"
           required
         />
         <button 
           type="submit" 
           id="btn-rag-ask"
-          class="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 rounded-md text-xs font-medium transition flex items-center gap-1.5"
+          class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-medium transition flex items-center gap-1.5"
         >
-          <i data-lucide="send" class="w-3 h-3 text-blue-400"></i>
-          <span>Generează răspuns</span>
+          <span>Interoghează</span>
         </button>
       </form>
 
       <!-- Answer container -->
-      <div id="rag-answer-container" class="hidden rounded-md bg-zinc-950 p-3.5 border border-zinc-800 space-y-2">
-        <div class="flex items-center justify-between text-xs text-zinc-400 border-b border-zinc-800/80 pb-1.5">
-          <span class="font-medium text-zinc-300">Răspuns sintetizat din abstracte:</span>
-          <button id="btn-copy-rag-answer" class="text-zinc-400 hover:text-white flex items-center gap-1 text-[11px]">
+      <div id="rag-answer-container" class="hidden rounded bg-slate-50 p-3.5 border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-600 border-b border-slate-200 pb-1.5">
+          <span class="font-semibold text-slate-800">Sinteză pe bază de evidențe din abstracte:</span>
+          <button id="btn-copy-rag-answer" class="text-slate-500 hover:text-slate-800 flex items-center gap-1 text-[11px]">
             <i data-lucide="copy" class="w-3 h-3"></i> Copiază
           </button>
         </div>
@@ -165,31 +150,31 @@
       </div>
     </section>
 
-    <!-- Filters & Sorting Bar -->
-    <section id="results-meta-bar" class="hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-zinc-800/80 text-xs">
+    <!-- Filters & Stats Bar -->
+    <section id="results-meta-bar" class="hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-xs">
       <div class="flex items-center gap-2 flex-wrap">
-        <span id="results-count-badge" class="font-medium text-zinc-300">0 lucrări</span>
-        <span class="text-zinc-600">&bull;</span>
+        <span id="results-count-badge" class="font-semibold text-slate-800">0 lucrări găsite</span>
+        <span class="text-slate-300">&bull;</span>
         
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
-          <button id="filter-all" class="filter-btn active">Toate</button>
-          <button id="filter-oa" class="filter-btn">Doar Open Access</button>
-          <button id="filter-paywalled" class="filter-btn">Paywalled</button>
+        <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded border border-slate-200">
+          <button id="filter-all" class="tab-btn active">Toate</button>
+          <button id="filter-oa" class="tab-btn">Doar Open Access</button>
+          <button id="filter-paywalled" class="tab-btn">Paywalled</button>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5 text-zinc-400">
+        <div class="flex items-center gap-1.5 text-slate-600">
           <span>Sortare:</span>
-          <select id="sort-select" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-zinc-200 focus:outline-none text-xs">
-            <option value="semantic">Relevanță semantică</option>
+          <select id="sort-select" class="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none text-xs">
+            <option value="semantic">Relevanță semantică (Vector)</option>
             <option value="citations">Număr citări</option>
             <option value="year_desc">Cele mai recente</option>
           </select>
         </div>
 
-        <button id="btn-toggle-qa" class="text-zinc-400 hover:text-zinc-200 font-medium inline-flex items-center gap-1">
+        <button id="btn-toggle-qa" class="text-blue-700 hover:text-blue-900 font-medium inline-flex items-center gap-1">
           <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
           <span>Întreabă corpusul</span>
         </button>
@@ -198,15 +183,18 @@
 
     <!-- Loading State -->
     <div id="loading-state" class="hidden py-12 text-center space-y-2">
-      <div class="w-5 h-5 border-2 border-zinc-600 border-t-zinc-200 rounded-full animate-spin mx-auto"></div>
-      <p class="text-xs text-zinc-400">Căutare în baze academice și calcul similaritate semantică...</p>
+      <div class="w-5 h-5 border-2 border-slate-400 border-t-blue-700 rounded-full animate-spin mx-auto"></div>
+      <p class="text-xs text-slate-600">Interogare baze de date academice și calcul similaritate vectorială...</p>
     </div>
 
     <!-- Empty State -->
-    <div id="empty-state" class="text-center py-16 px-4 border border-dashed border-zinc-800 rounded-lg text-zinc-400 space-y-2">
-      <i data-lucide="search" class="w-6 h-6 text-zinc-600 mx-auto mb-1"></i>
-      <p class="text-xs text-zinc-400 max-w-sm mx-auto">
-        Introdu o căutare academică mai sus. Motorul va interoga sursele, va recupera abstractele lipsă și va calcula relevanța semantică.
+    <div id="empty-state" class="text-center py-16 px-4 border border-dashed border-slate-300 rounded-lg text-slate-500 space-y-2 bg-white">
+      <i data-lucide="search" class="w-6 h-6 text-slate-400 mx-auto mb-1"></i>
+      <p class="text-xs text-slate-600 max-w-sm mx-auto font-medium">
+        Introdu o căutare academică în bara de mai sus.
+      </p>
+      <p class="text-[11px] text-slate-400 max-w-md mx-auto">
+        Motorul caută automat pe OpenAlex, IEEE Xplore și Crossref, recuperează abstractele paywalled și calculează scorul semantic.
       </p>
     </div>
 
@@ -217,23 +205,23 @@
 
   </main>
 
-  <!-- Paper Details Modal -->
-  <div id="paper-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-    <div class="bg-zinc-900 border border-zinc-700 rounded-lg max-w-2xl w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden">
+  <!-- Paper Details Modal (Clean Light Academic Style) -->
+  <div id="paper-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white border border-slate-300 rounded-lg max-w-2xl w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden">
       <!-- Header -->
-      <div class="p-4 border-b border-zinc-800 flex items-start justify-between gap-3">
+      <div class="p-4 border-b border-slate-200 flex items-start justify-between gap-3 bg-slate-50">
         <div class="space-y-1 pr-4">
           <div class="flex items-center gap-2 flex-wrap text-xs">
             <span id="modal-oa-badge"></span>
-            <span id="modal-semantic-badge" class="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[11px]"></span>
-            <span id="modal-year-badge" class="text-zinc-400"></span>
-            <span class="text-zinc-600">&bull;</span>
-            <span id="modal-citations-badge" class="text-zinc-400"></span>
+            <span id="modal-semantic-badge" class="px-2 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]"></span>
+            <span id="modal-year-badge" class="text-slate-600 font-medium"></span>
+            <span class="text-slate-300">&bull;</span>
+            <span id="modal-citations-badge" class="text-slate-600 font-medium"></span>
           </div>
-          <h3 id="modal-title" class="text-base font-semibold text-zinc-100 leading-snug"></h3>
-          <p id="modal-authors" class="text-xs text-zinc-400"></p>
+          <h3 id="modal-title" class="text-base font-bold text-slate-900 leading-snug"></h3>
+          <p id="modal-authors" class="text-xs text-slate-600"></p>
         </div>
-        <button id="btn-close-modal" class="p-1 text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition">
+        <button id="btn-close-modal" class="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-200 transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -241,77 +229,77 @@
       <!-- Body -->
       <div class="p-4 overflow-y-auto space-y-4 text-xs">
         <!-- Venue & DOI -->
-        <div class="flex items-center gap-4 text-zinc-400 flex-wrap">
-          <div><strong class="text-zinc-300">Publicat în:</strong> <span id="modal-venue" class="text-zinc-200"></span></div>
-          <div><strong class="text-zinc-300">Publisher:</strong> <span id="modal-publisher" class="text-zinc-200"></span></div>
-          <div><strong class="text-zinc-300">DOI:</strong> <span id="modal-doi" class="text-blue-400 font-mono"></span></div>
+        <div class="flex items-center gap-4 text-slate-600 flex-wrap bg-slate-50 p-2.5 rounded border border-slate-200">
+          <div><strong class="text-slate-800">Publicat în:</strong> <span id="modal-venue" class="text-slate-700"></span></div>
+          <div><strong class="text-slate-800">Publisher:</strong> <span id="modal-publisher" class="text-slate-700"></span></div>
+          <div><strong class="text-slate-800">DOI:</strong> <span id="modal-doi" class="text-blue-700 font-mono"></span></div>
         </div>
 
         <!-- Abstract & Source -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <strong class="text-zinc-300">Abstract</strong>
-              <span id="modal-abstract-source" class="text-[10px] text-zinc-500 font-mono"></span>
+              <strong class="text-slate-800 text-xs">Abstract</strong>
+              <span id="modal-abstract-source" class="text-[10px] text-slate-500 font-mono"></span>
             </div>
-            <button id="btn-force-abstract" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition">
+            <button id="btn-force-abstract" class="text-[11px] text-blue-700 hover:underline flex items-center gap-1 transition">
               <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-              <span>Reîmprospătează</span>
+              <span>Reîmprospătează din alte API-uri</span>
             </button>
           </div>
-          <p id="modal-abstract" class="text-zinc-300 leading-relaxed bg-zinc-950 p-3 rounded border border-zinc-800 whitespace-pre-line text-xs"></p>
+          <p id="modal-abstract" class="text-slate-800 leading-relaxed bg-white p-3 rounded border border-slate-200 whitespace-pre-line text-xs"></p>
         </div>
 
         <!-- Unpaywall Live Status -->
-        <div id="modal-unpaywall-box" class="p-3 rounded bg-zinc-950 border border-zinc-800 space-y-1">
+        <div id="modal-unpaywall-box" class="p-3 rounded bg-slate-50 border border-slate-200 space-y-1">
           <div class="flex items-center justify-between text-xs">
-            <span class="font-medium text-zinc-300">Status Unpaywall:</span>
-            <span id="modal-unpaywall-status" class="text-zinc-400">Verificare...</span>
+            <span class="font-medium text-slate-800">Status Unpaywall (Open Access):</span>
+            <span id="modal-unpaywall-status" class="text-slate-600">Verificare...</span>
           </div>
-          <p id="modal-unpaywall-info" class="text-[11px] text-zinc-500"></p>
+          <p id="modal-unpaywall-info" class="text-[11px] text-slate-500"></p>
         </div>
 
         <!-- BibTeX Box -->
         <div class="space-y-1">
           <div class="flex items-center justify-between">
-            <strong class="text-zinc-300">Referință BibTeX</strong>
-            <button id="btn-copy-bibtex" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1">
+            <strong class="text-slate-800">Referință BibTeX</strong>
+            <button id="btn-copy-bibtex" class="text-[11px] text-blue-700 hover:underline flex items-center gap-1 font-medium">
               <i data-lucide="copy" class="w-3 h-3"></i> Copiază
             </button>
           </div>
-          <pre id="modal-bibtex" class="bg-zinc-950 p-2.5 rounded border border-zinc-800 text-[11px] font-mono text-zinc-300 overflow-x-auto"></pre>
+          <pre id="modal-bibtex" class="bg-slate-50 p-2.5 rounded border border-slate-200 text-[11px] font-mono text-slate-800 overflow-x-auto"></pre>
         </div>
       </div>
 
       <!-- Footer -->
-      <div class="p-3 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between gap-2">
+      <div class="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-          <a id="modal-btn-download-pdf" href="#" target="_blank" rel="noopener noreferrer" class="hidden px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-medium transition flex items-center gap-1">
+          <a id="modal-btn-download-pdf" href="#" target="_blank" rel="noopener noreferrer" class="hidden px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-medium transition flex items-center gap-1">
             <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
             <span>PDF Gratuit</span>
           </a>
-          <a id="modal-btn-proxy" href="#" target="_blank" rel="noopener noreferrer" class="hidden px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-xs font-medium transition flex items-center gap-1">
+          <a id="modal-btn-proxy" href="#" target="_blank" rel="noopener noreferrer" class="hidden px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded text-xs font-medium transition flex items-center gap-1">
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
             <span>Via Proxy Muncă</span>
           </a>
-          <a id="modal-btn-publisher" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded text-xs font-medium transition flex items-center gap-1">
+          <a id="modal-btn-publisher" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded text-xs font-medium transition flex items-center gap-1">
             <i data-lucide="globe" class="w-3.5 h-3.5"></i>
             <span>Publisher / DOI</span>
           </a>
         </div>
-        <button id="btn-close-modal-bottom" class="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200 transition">
+        <button id="btn-close-modal-bottom" class="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-800 transition">
           Închide
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-    <div class="bg-zinc-900 border border-zinc-700 rounded-lg max-w-lg w-full flex flex-col shadow-xl overflow-hidden">
-      <div class="p-4 border-b border-zinc-800 flex items-center justify-between">
-        <h3 class="font-medium text-zinc-200 text-sm">Configurare & Chei API</h3>
-        <button id="btn-close-settings" class="p-1 text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition">
+  <!-- Settings Modal (Clean Form Style) -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white border border-slate-300 rounded-lg max-w-lg w-full flex flex-col shadow-xl overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <h3 class="font-bold text-slate-800 text-sm">Configurare & Chei API</h3>
+        <button id="btn-close-settings" class="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-200 transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -319,87 +307,87 @@
       <div class="p-4 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
         <!-- Backend API URL -->
         <div class="space-y-1">
-          <label class="block font-medium text-zinc-300">
+          <label class="block font-medium text-slate-700">
             Adresă Backend FastAPI
           </label>
           <input 
             type="text" 
             id="setting-backend-url" 
             placeholder="http://localhost:8000 sau lasă gol pentru auto-detect" 
-            class="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700 rounded text-zinc-200 text-xs focus:border-blue-500 focus:outline-none font-mono"
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 text-xs focus:border-blue-600 focus:outline-none font-mono"
           />
-          <span class="text-[11px] text-zinc-500 block">Dacă rulezi cu Docker (`docker compose up`), backend-ul rulează pe portul 8000.</span>
+          <span class="text-[11px] text-slate-500 block">Dacă rulezi cu Docker (`docker compose up`), backend-ul rulează pe portul 8000.</span>
         </div>
 
         <!-- Institutional Proxy -->
-        <div class="space-y-1 pt-2 border-t border-zinc-800">
-          <label class="block font-medium text-zinc-300">
+        <div class="space-y-1 pt-2 border-t border-slate-200">
+          <label class="block font-medium text-slate-700">
             Prefix Proxy Instituțional (EZProxy / Muncă)
           </label>
           <input 
             type="text" 
             id="setting-ezproxy" 
             placeholder="Ex: https://ezproxy.biblioteca.tua.ro/login?url=" 
-            class="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700 rounded text-zinc-200 text-xs focus:border-blue-500 focus:outline-none"
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 text-xs focus:border-blue-600 focus:outline-none"
           />
         </div>
 
         <!-- IEEE Key -->
-        <div class="space-y-1 pt-2 border-t border-zinc-800">
+        <div class="space-y-1 pt-2 border-t border-slate-200">
           <div class="flex items-center justify-between">
-            <label class="font-medium text-zinc-300">IEEE Xplore API Key</label>
-            <a href="https://developer.ieee.org" target="_blank" class="text-[11px] text-blue-400 hover:underline">developer.ieee.org</a>
+            <label class="font-medium text-slate-700">IEEE Xplore API Key</label>
+            <a href="https://developer.ieee.org" target="_blank" class="text-[11px] text-blue-700 hover:underline">developer.ieee.org</a>
           </div>
           <input 
             type="password" 
             id="setting-ieee-key" 
             placeholder="Cheie opțională IEEE Xplore" 
-            class="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700 rounded text-zinc-200 text-xs focus:border-blue-500 focus:outline-none font-mono"
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 text-xs focus:border-blue-600 focus:outline-none font-mono"
           />
         </div>
 
         <!-- Elsevier Key -->
-        <div class="space-y-1 pt-2 border-t border-zinc-800">
+        <div class="space-y-1 pt-2 border-t border-slate-200">
           <div class="flex items-center justify-between">
-            <label class="font-medium text-zinc-300">Elsevier Scopus API Key</label>
-            <a href="https://dev.elsevier.com" target="_blank" class="text-[11px] text-blue-400 hover:underline">dev.elsevier.com</a>
+            <label class="font-medium text-slate-700">Elsevier Scopus API Key</label>
+            <a href="https://dev.elsevier.com" target="_blank" class="text-[11px] text-blue-700 hover:underline">dev.elsevier.com</a>
           </div>
           <input 
             type="password" 
             id="setting-elsevier-key" 
             placeholder="Cheie opțională ScienceDirect/Scopus" 
-            class="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700 rounded text-zinc-200 text-xs focus:border-blue-500 focus:outline-none font-mono"
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 text-xs focus:border-blue-600 focus:outline-none font-mono"
           />
         </div>
 
         <!-- Gemini API Key -->
-        <div class="space-y-1 pt-2 border-t border-zinc-800">
+        <div class="space-y-1 pt-2 border-t border-slate-200">
           <div class="flex items-center justify-between">
-            <label class="font-medium text-zinc-300">Google Gemini API Key (RAG Generativ)</label>
-            <a href="https://aistudio.google.com" target="_blank" class="text-[11px] text-blue-400 hover:underline">AI Studio</a>
+            <label class="font-medium text-slate-700">Google Gemini API Key (RAG Generativ)</label>
+            <a href="https://aistudio.google.com" target="_blank" class="text-[11px] text-blue-700 hover:underline">AI Studio</a>
           </div>
           <input 
             type="password" 
             id="setting-gemini-key" 
             placeholder="AIzaSy..." 
-            class="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700 rounded text-zinc-200 text-xs focus:border-blue-500 focus:outline-none font-mono"
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 text-xs focus:border-blue-600 focus:outline-none font-mono"
           />
         </div>
       </div>
 
-      <div class="p-3 border-t border-zinc-800 bg-zinc-950 flex items-center justify-end gap-2">
-        <button id="btn-save-settings" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium transition">
+      <div class="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+        <button id="btn-save-settings" class="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded text-xs font-medium transition">
           Salvează
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Minimalist Footer -->
-  <footer class="border-t border-zinc-800/80 py-4 text-center text-xs text-zinc-500">
-    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <p>ScholarAgent &bull; Academic Literature Explorer</p>
-      <div class="flex items-center gap-3 text-zinc-500">
+  <!-- Clean Footer -->
+  <footer class="border-t border-slate-200 py-5 text-center text-xs text-slate-500 mt-12 bg-white">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>ScholarAgent &bull; Academic Literature Search & RAG</p>
+      <div class="flex items-center gap-3 text-slate-500">
         <span>IEEE Xplore</span>
         <span>OpenAlex</span>
         <span>Crossref</span>
