@@ -48,9 +48,10 @@ async function checkBackendHealth() {
     if (res.ok) {
       const data = await res.json();
       state.backendOnline = true;
-      dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 font-medium';
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-600';
       text.textContent = data.dense_embeddings_loaded ? 'Backend: Dense Vector RAG' : 'Backend: Semantic TF-IDF';
-      text.className = 'text-emerald-300 font-semibold';
+      text.className = 'text-emerald-800 font-medium';
       return;
     }
   } catch (err) {
@@ -58,9 +59,10 @@ async function checkBackendHealth() {
   }
 
   state.backendOnline = false;
-  dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-  text.textContent = 'Mod: Client Direct (Fără Backend)';
-  text.className = 'text-amber-300';
+  badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-700 font-medium';
+  dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+  text.textContent = 'Mod: Client Direct (Web)';
+  text.className = 'text-slate-700 font-medium';
 }
 
 /* ==========================================================================
