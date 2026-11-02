@@ -24,6 +24,7 @@ class Paper(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     limit: int = 25
+    page: int = 1
     enable_semantic_rerank: bool = True
     gemini_key: Optional[str] = None
     ieee_key: Optional[str] = None

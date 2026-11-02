@@ -15,7 +15,7 @@
   <!-- Marked for Markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=20261102_14">
+  <link rel="stylesheet" href="styles.css?v=20261102_15">
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen font-sans antialiased text-sm">
 
@@ -164,7 +164,16 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-1.5 text-slate-600">
+          <span>Afișează:</span>
+          <select id="limit-select" class="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none text-xs">
+            <option value="25" selected>25 per căutare</option>
+            <option value="50">50 per căutare</option>
+            <option value="100">100 per căutare</option>
+          </select>
+        </div>
+
         <div class="flex items-center gap-1.5 text-slate-600">
           <span>Sortare:</span>
           <select id="sort-select" class="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none text-xs">
@@ -202,6 +211,17 @@
     <section id="results-container" class="space-y-3">
       <!-- Dynamic list injected here -->
     </section>
+
+    <!-- Load More Section -->
+    <div id="load-more-container" class="hidden text-center py-4">
+      <button 
+        id="btn-load-more" 
+        class="px-5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded font-medium text-xs transition inline-flex items-center gap-2 shadow-sm"
+      >
+        <i data-lucide="arrow-down" class="w-3.5 h-3.5 text-slate-500"></i>
+        <span id="load-more-text">Încarcă încă 25 de lucrări</span>
+      </button>
+    </div>
 
   </main>
 
@@ -396,6 +416,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261102_14"></script>
+  <script src="app.js?v=20261102_15"></script>
 </body>
 </html>

@@ -10,6 +10,9 @@ const state = {
   filteredPapers: [],
   activeFilter: 'all',
   currentSort: 'semantic', // 'semantic', 'citations', 'year_desc'
+  limitPerPage: parseInt(localStorage.getItem('scholar_limit') || '25', 10),
+  currentPage: 1,
+  isLoadingMore: false,
   selectedPaper: null,
   isSearching: false,
   backendOnline: false,
@@ -99,6 +102,27 @@ function initEventListeners() {
   document.getElementById('filter-all').addEventListener('click', () => setFilter('all'));
   document.getElementById('filter-oa').addEventListener('click', () => setFilter('oa'));
   document.getElementById('filter-paywalled').addEventListener('click', () => setFilter('paywalled'));
+
+  // Limit per page dropdown
+  const limitSelect = document.getElementById('limit-select');
+  if (limitSelect) {
+    limitSelect.value = state.limitPerPage.toString();
+    limitSelect.addEventListener('change', (e) => {
+      state.limitPerPage = parseInt(e.target.value, 10);
+      localStorage.setItem('scholar_limit', state.limitPerPage.toString());
+      const loadMoreText = document.getElementById('load-more-text');
+      if (loadMoreText) loadMoreText.textContent = `Încarcă încă ${state.limitPerPage} de lucrări`;
+      if (state.currentQuery) {
+        executeSearch(state.currentQuery);
+      }
+    });
+  }
+
+  // Load more button
+  const btnLoadMore = document.getElementById('btn-load-more');
+  if (btnLoadMore) {
+    btnLoadMore.addEventListener('click', loadMorePapers);
+  }
 
   // Sort dropdown
   document.getElementById('sort-select').addEventListener('change', (e) => {
@@ -202,21 +226,52 @@ function initSettingsUI() {
   });
 }
 
+function normalizeBackendPaper(p) {
+  return {
+    id: p.id,
+    title: p.title,
+    authors: p.authors || ['Unknown Author'],
+    year: p.year || 'N/A',
+    publicationDate: p.publication_date,
+    citations: p.citations || 0,
+    isOpenAccess: p.is_open_access,
+    oaStatus: p.oa_status,
+    oaPdfUrl: p.oa_pdf_url,
+    doi: p.doi,
+    doiUrl: p.doi_url,
+    landingUrl: p.landing_url,
+    venue: p.venue || 'Academic Venue',
+    publisher: p.publisher || 'Publisher',
+    concepts: p.concepts || [],
+    abstract: p.abstract || 'Abstract indisponibil',
+    abstractSource: p.abstract_source || 'Index',
+    semanticScore: p.semantic_score
+  };
+}
+
 /* ==========================================================================
    4. Search Pipeline (Backend Semantic RAG or Client-Side)
    ========================================================================== */
 async function executeSearch(query) {
   state.currentQuery = query;
   state.isSearching = true;
+  state.currentPage = 1;
+  state.papers = [];
+  state.filteredPapers = [];
 
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('results-meta-bar').classList.add('hidden');
   document.getElementById('results-container').innerHTML = '';
   document.getElementById('loading-state').classList.remove('hidden');
 
+  const loadMoreBox = document.getElementById('load-more-container');
+  if (loadMoreBox) loadMoreBox.classList.add('hidden');
+
   const enableSemantic = document.getElementById('chk-semantic-rerank').checked;
+  const limit = state.limitPerPage || 25;
 
   try {
+    let papers = [];
     // Încearcă căutare prin backend dacă este online
     if (state.backendOnline) {
       const base = state.settings.backendUrl.replace(/\/+$/, '');
@@ -225,7 +280,8 @@ async function executeSearch(query) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: query,
-          limit: 30,
+          limit: limit,
+          page: 1,
           enable_semantic_rerank: enableSemantic,
           gemini_key: state.settings.geminiKey || null,
           ieee_key: state.settings.ieeeKey || null,
@@ -236,30 +292,13 @@ async function executeSearch(query) {
 
       if (!res.ok) throw new Error(`Backend error HTTP ${res.status}`);
       const data = await res.json();
-      state.papers = data.papers.map(p => ({
-        id: p.id,
-        title: p.title,
-        authors: p.authors,
-        year: p.year,
-        publicationDate: p.publication_date,
-        citations: p.citations,
-        isOpenAccess: p.is_open_access,
-        oaStatus: p.oa_status,
-        oaPdfUrl: p.oa_pdf_url,
-        doi: p.doi,
-        doiUrl: p.doi_url,
-        landingUrl: p.landing_url,
-        venue: p.venue,
-        publisher: p.publisher,
-        concepts: p.concepts,
-        abstract: p.abstract,
-        abstractSource: p.abstract_source,
-        semanticScore: p.semantic_score
-      }));
+      papers = (data.papers || []).map(normalizeBackendPaper);
     } else {
       // Fallback: Client-Side Search Direct din browser
-      state.papers = await clientSideSearch(query);
+      papers = await clientSideSearch(query, limit, 1);
     }
+
+    state.papers = papers;
 
     document.getElementById('loading-state').classList.add('hidden');
     document.getElementById('results-meta-bar').classList.remove('hidden');
@@ -268,22 +307,40 @@ async function executeSearch(query) {
 
     applySortAndFilter();
 
+    if (loadMoreBox) {
+      if (papers.length >= limit) {
+        loadMoreBox.classList.remove('hidden');
+        const loadMoreText = document.getElementById('load-more-text');
+        if (loadMoreText) loadMoreText.textContent = `Încarcă încă ${limit} de lucrări`;
+      } else {
+        loadMoreBox.classList.add('hidden');
+      }
+    }
+
   } catch (err) {
     console.error('Search failed:', err);
     // Dacă backend-ul a eșuat la runtime, încearcă fallback client-side
     try {
-      state.papers = await clientSideSearch(query);
+      state.papers = await clientSideSearch(query, limit, 1);
       document.getElementById('loading-state').classList.add('hidden');
       document.getElementById('results-meta-bar').classList.remove('hidden');
       document.getElementById('rag-qa-section').classList.remove('hidden');
       applySortAndFilter();
+
+      if (loadMoreBox) {
+        if (state.papers.length >= limit) {
+          loadMoreBox.classList.remove('hidden');
+          const loadMoreText = document.getElementById('load-more-text');
+          if (loadMoreText) loadMoreText.textContent = `Încarcă încă ${limit} de lucrări`;
+        }
+      }
     } catch (fallbackErr) {
       document.getElementById('loading-state').classList.add('hidden');
       document.getElementById('results-container').innerHTML = `
-        <div class="p-6 rounded-xl bg-red-950/30 border border-red-800 text-red-300 text-center space-y-2">
-          <i data-lucide="alert-triangle" class="w-8 h-8 text-red-400 mx-auto"></i>
+        <div class="p-6 rounded border border-red-300 bg-red-50 text-red-900 text-center space-y-2">
+          <i data-lucide="alert-triangle" class="w-8 h-8 text-red-600 mx-auto"></i>
           <h4 class="font-bold">Eroare la căutarea literaturii</h4>
-          <p class="text-xs text-red-400">${err.message}</p>
+          <p class="text-xs text-red-700">${escapeHtml(err.message)}</p>
         </div>
       `;
       if (window.lucide) window.lucide.createIcons();
@@ -294,10 +351,95 @@ async function executeSearch(query) {
 }
 
 /**
+ * Paginare: Încarcă următoarele lucrări și le adaugă la corpusul existent
+ */
+async function loadMorePapers() {
+  if (state.isLoadingMore || !state.currentQuery) return;
+  state.isLoadingMore = true;
+
+  const btn = document.getElementById('btn-load-more');
+  const textEl = document.getElementById('load-more-text');
+  const originalText = textEl ? textEl.textContent : 'Încarcă mai multe';
+  if (textEl) textEl.textContent = 'Se contactează baze de date...';
+  if (btn) btn.disabled = true;
+
+  const limit = state.limitPerPage || 25;
+  const nextPage = state.currentPage + 1;
+
+  try {
+    let nextBatch = [];
+    if (state.backendOnline) {
+      const base = state.settings.backendUrl.replace(/\/+$/, '');
+      const res = await fetch(`${base}/api/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: state.currentQuery,
+          limit: limit,
+          page: nextPage,
+          enable_semantic_rerank: document.getElementById('chk-semantic-rerank').checked,
+          gemini_key: state.settings.geminiKey || null,
+          ieee_key: state.settings.ieeeKey || null,
+          elsevier_key: state.settings.elsevierKey || null,
+          email: state.settings.email
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        nextBatch = (data.papers || []).map(normalizeBackendPaper);
+      }
+    } else {
+      nextBatch = await clientSideSearch(state.currentQuery, limit, nextPage);
+    }
+
+    if (nextBatch.length > 0) {
+      state.currentPage = nextPage;
+      const existingIds = new Set(state.papers.map(p => p.id));
+      const existingDois = new Set(state.papers.map(p => p.doi).filter(Boolean));
+
+      let addedCount = 0;
+      for (const p of nextBatch) {
+        if (!existingIds.has(p.id) && (!p.doi || !existingDois.has(p.doi))) {
+          state.papers.push(p);
+          existingIds.add(p.id);
+          if (p.doi) existingDois.add(p.doi);
+          addedCount++;
+        }
+      }
+
+      applySortAndFilter();
+      showToast(`S-au adăugat ${addedCount} lucrări noi în corpus!`);
+
+      const loadMoreBox = document.getElementById('load-more-container');
+      if (loadMoreBox) {
+        if (nextBatch.length < limit) {
+          loadMoreBox.classList.add('hidden');
+        } else {
+          loadMoreBox.classList.remove('hidden');
+        }
+      }
+    } else {
+      const loadMoreBox = document.getElementById('load-more-container');
+      if (loadMoreBox) loadMoreBox.classList.add('hidden');
+      showToast('Nu mai există alte lucrări pentru această căutare.');
+    }
+  } catch (err) {
+    console.error('Load more failed:', err);
+    showToast('Eroare la încărcarea paginii următoare.');
+  } finally {
+    state.isLoadingMore = false;
+    if (btn) btn.disabled = false;
+    if (textEl) textEl.textContent = originalText;
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+/**
  * Căutare client-side de rezervă dacă backend-ul nu este pornit
  */
-async function clientSideSearch(query) {
-  const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=25&mailto=${encodeURIComponent(state.settings.email)}`;
+async function clientSideSearch(query, limit = 25, page = 1) {
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=${safeLimit}&page=${page}&mailto=${encodeURIComponent(state.settings.email)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Eroare OpenAlex API.');
   const data = await res.json();

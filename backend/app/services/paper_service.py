@@ -26,6 +26,7 @@ class PaperService:
         self,
         query: str,
         limit: int = 25,
+        page: int = 1,
         email: Optional[str] = None,
         ieee_key: Optional[str] = None,
         elsevier_key: Optional[str] = None,
@@ -38,10 +39,10 @@ class PaperService:
         papers: List[Paper] = []
         existing_dois = set()
 
-        # 1. Fetch from IEEE Xplore REST API dacă există cheie IEEE
-        if ieee_key:
+        # 1. Fetch from IEEE Xplore REST API dacă există cheie IEEE (doar la prima pagină)
+        if ieee_key and page == 1:
             try:
-                ieee_articles = await self._fetch_ieee_xplore(clean_query, limit=12, api_key=ieee_key)
+                ieee_articles = await self._fetch_ieee_xplore(clean_query, limit=min(limit, 25), api_key=ieee_key)
                 for item in ieee_articles:
                     ieee_paper = self._normalize_ieee(item)
                     if ieee_paper.doi:
@@ -51,7 +52,7 @@ class PaperService:
                 print(f"IEEE search failed: {e}")
 
         # 2. Fetch from OpenAlex API (Global, acoperă și publicațiile IEEE, Elsevier, Springer etc.)
-        openalex_works = await self._fetch_openalex(clean_query, limit, used_email)
+        openalex_works = await self._fetch_openalex(clean_query, limit, used_email, page=page)
         for w in openalex_works:
             paper = self._normalize_openalex(w)
             if paper.doi and paper.doi in existing_dois:
@@ -101,8 +102,9 @@ class PaperService:
 
         return papers
 
-    async def _fetch_openalex(self, query: str, limit: int, email: str) -> List[Dict[str, Any]]:
-        url = f"https://api.openalex.org/works?search={urllib.parse.quote(query)}&per_page={limit}&mailto={urllib.parse.quote(email)}"
+    async def _fetch_openalex(self, query: str, limit: int, email: str, page: int = 1) -> List[Dict[str, Any]]:
+        safe_limit = min(max(limit, 1), 100)
+        url = f"https://api.openalex.org/works?search={urllib.parse.quote(query)}&per_page={safe_limit}&page={page}&mailto={urllib.parse.quote(email)}"
         async with httpx.AsyncClient(timeout=12.0) as client:
             resp = await client.get(url, headers={"User-Agent": f"ScholarAgent/3.0 (mailto:{email})"})
             if resp.status_code == 200:

@@ -57,6 +57,7 @@ async def search_academic_papers(req: SearchRequest):
         papers = await paper_service.search_papers(
             query=req.query,
             limit=req.limit,
+            page=req.page,
             email=req.email or settings.DEFAULT_POLITE_EMAIL,
             ieee_key=req.ieee_key or settings.IEEE_API_KEY or None,
             elsevier_key=req.elsevier_key or settings.ELSEVIER_API_KEY or None,
