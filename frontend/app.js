@@ -489,38 +489,38 @@ function renderPaperCards() {
 
   container.innerHTML = state.filteredPapers.map((paper, idx) => {
     const oaStatusText = paper.isOpenAccess
-      ? `<span class="text-emerald-700 font-semibold">[Open Access &bull; PDF Gratuit]</span>`
-      : `<span class="text-slate-500">[Paywalled]</span>`;
+      ? `<span style="color: #047857; font-weight: 700;">[Open Access &bull; PDF Gratuit]</span>`
+      : `<span style="color: #475569; font-weight: 600;">[Paywalled]</span>`;
 
     const semanticScoreText = paper.semanticScore !== null && paper.semanticScore !== undefined
-      ? `<span class="text-slate-600 font-mono text-[11px] bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">Relevanță: ${Math.round(paper.semanticScore * 100)}%</span>`
+      ? `<span style="color: #1e293b; font-family: monospace; font-size: 11px; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Relevanță: ${Math.round(paper.semanticScore * 100)}%</span>`
       : '';
 
     const formattedAuthors = paper.authors.slice(0, 4).join(', ') + (paper.authors.length > 4 ? ' et al.' : '');
 
     return `
-      <article id="paper-card-${paper.id}" class="paper-entry space-y-2">
+      <article id="paper-card-${paper.id}" class="paper-entry space-y-2" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 1rem 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
         <div class="space-y-1">
-          <h3 class="leading-snug">
-            <a href="javascript:void(0)" onclick="openPaperModal('${paper.id}')" class="paper-title">
+          <h3 class="leading-snug" style="margin: 0; padding: 0;">
+            <a href="javascript:void(0)" onclick="openPaperModal('${paper.id}')" class="paper-title" style="color: #1d4ed8 !important; font-size: 1.05rem; font-weight: 700; text-decoration: none;">
               ${escapeHtml(paper.title)}
             </a>
           </h3>
 
           <!-- Academic citation line (Google Scholar style) -->
-          <div class="paper-citation-line flex items-center gap-1.5 flex-wrap">
+          <div class="paper-citation-line flex items-center gap-1.5 flex-wrap" style="color: #047857; font-size: 0.8125rem; line-height: 1.4;">
             ${oaStatusText}
-            <span class="text-slate-700 font-medium">${escapeHtml(formattedAuthors)}</span>
-            <span class="text-slate-400">&mdash;</span>
-            <span class="text-slate-600 italic">${escapeHtml(paper.venue)} (${paper.year})</span>
-            ${paper.doi ? `<span class="text-slate-400">&bull;</span> <span class="text-slate-500 font-mono text-xs">doi:${escapeHtml(paper.doi)}</span>` : ''}
-            ${paper.citations > 0 ? `<span class="text-slate-400">&bull;</span> <span class="text-slate-600 font-medium">Citat de ${paper.citations.toLocaleString()} ori</span>` : ''}
+            <span style="color: #334155; font-weight: 500;">${escapeHtml(formattedAuthors)}</span>
+            <span style="color: #94a3b8;">&mdash;</span>
+            <span style="color: #475569; font-style: italic;">${escapeHtml(paper.venue)} (${paper.year})</span>
+            ${paper.doi ? `<span style="color: #94a3b8;">&bull;</span> <span style="color: #475569; font-family: monospace;">doi:${escapeHtml(paper.doi)}</span>` : ''}
+            ${paper.citations > 0 ? `<span style="color: #94a3b8;">&bull;</span> <span style="color: #334155; font-weight: 600;">Citat de ${paper.citations.toLocaleString()} ori</span>` : ''}
             ${semanticScoreText}
           </div>
         </div>
 
         <!-- Abstract snippet -->
-        <p class="paper-snippet leading-relaxed">
+        <p class="paper-snippet leading-relaxed" style="color: #1e293b !important; font-size: 0.84rem; line-height: 1.55; margin: 0.35rem 0;">
           ${escapeHtml(paper.abstract)}
         </p>
 
@@ -528,28 +528,28 @@ function renderPaperCards() {
         <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
           <div class="flex items-center gap-2 flex-wrap">
             ${paper.isOpenAccess && paper.oaPdfUrl ? `
-              <a href="${paper.oaPdfUrl}" target="_blank" rel="noopener noreferrer" class="paper-action-link primary">
+              <a href="${paper.oaPdfUrl}" target="_blank" rel="noopener noreferrer" class="paper-action-link primary" style="color: #065f46; background-color: #ecfdf5; border: 1px solid #6ee7b7; font-weight: 600; padding: 3px 8px; border-radius: 4px; text-decoration: none;">
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                 <span>Descarcă PDF</span>
               </a>
             ` : ''}
             ${paper.landingUrl ? `
-              <a href="${paper.landingUrl}" target="_blank" rel="noopener noreferrer" class="paper-action-link">
+              <a href="${paper.landingUrl}" target="_blank" rel="noopener noreferrer" class="paper-action-link" style="color: #334155; background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; text-decoration: none;">
                 <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                 <span>Publisher / DOI</span>
               </a>
             ` : ''}
-            <button onclick="copySingleBibTeX('${paper.id}')" class="paper-action-link">
+            <button onclick="copySingleBibTeX('${paper.id}')" class="paper-action-link" style="color: #334155; background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
               <i data-lucide="quote" class="w-3.5 h-3.5"></i>
               <span>Citează</span>
             </button>
-            <button onclick="openPaperModal('${paper.id}')" class="paper-action-link">
+            <button onclick="openPaperModal('${paper.id}')" class="paper-action-link" style="color: #334155; background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
               <i data-lucide="info" class="w-3.5 h-3.5"></i>
               <span>Abstract & Detalii</span>
             </button>
           </div>
 
-          <div class="text-[11px] text-slate-400 hidden sm:block">
+          <div style="font-size: 11px; color: #64748b;" class="hidden sm:block">
             Sursă: ${escapeHtml(paper.abstractSource || 'Index')}
           </div>
         </div>
