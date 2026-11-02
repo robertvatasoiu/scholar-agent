@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScholarAgent — Academic Research & Literature Explorer</title>
-  <meta name="description" content="Agent autonom de căutare și sinteză a lucrărilor academice (Open Access & Paywalled) alimentat de OpenAlex, Unpaywall, Crossref și AI.">
+  <title>ScholarAgent — Semantic Academic Search & RAG on Abstracts</title>
+  <meta name="description" content="Platformă de căutare semantică și RAG pe abstracte academice (Open Access & Paywalled) alimentată de FastAPI, OpenAlex, Unpaywall și Vector Embeddings.">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,6 +17,7 @@
             brand: {
               50: '#f0fdfa',
               100: '#ccfbf1',
+              400: '#2dd4bf',
               500: '#14b8a6',
               600: '#0d9488',
               700: '#0f766e',
@@ -36,7 +37,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <!-- Marked for Markdown rendering in AI synthesis -->
+  <!-- Marked for Markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <link rel="stylesheet" href="styles.css">
@@ -53,22 +54,28 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-lg font-bold tracking-tight text-white">ScholarAgent</h1>
-            <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">v2.0 Hybrid</span>
+            <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">v3.0 Semantic RAG</span>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">Open Access & Paywalled Paper Discovery Engine</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Motor Semantic de Căutare & RAG pe Abstracte Academice</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2.5">
+        <!-- Backend Status Badge -->
+        <div id="backend-status-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 border border-slate-700 text-slate-400">
+          <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span id="backend-status-text">Detectare Backend...</span>
+        </div>
+
         <button id="btn-export-all-bib" title="Exportă toate referințele găsite în format BibTeX" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-surface-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
           <span>Export BibTeX</span>
         </button>
         <button id="btn-open-settings" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-surface-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition">
           <i data-lucide="settings" class="w-4 h-4"></i>
-          <span>Setări & Proxy</span>
+          <span>Setări & API</span>
         </button>
-        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Vezi pe GitHub">
+        <a href="https://github.com/robertvatasoiu/scholar-agent" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Vezi pe GitHub">
           <i data-lucide="github" class="w-4 h-4"></i>
         </a>
       </div>
@@ -78,14 +85,14 @@
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-    <!-- Hero / Query Input Section -->
+    <!-- Search Section -->
     <section class="relative bg-gradient-to-b from-surface-900 to-surface-850 rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-2xl">
       <div class="max-w-3xl mx-auto text-center space-y-3 mb-6">
         <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Căutare & Sinteză Inteligentă de Lucrări Științifice
+          Căutare Semantică & RAG pe Abstracte Științifice
         </h2>
         <p class="text-sm sm:text-base text-slate-400">
-          Interoghează peste <span class="text-brand-400 font-semibold">250M+ de lucrări</span> din OpenAlex, arXiv, PubMed și Crossref. Verifică automat accesul gratuit prin Unpaywall sau rutează prin proxy-ul instituțional de la muncă.
+          Calculează reprezentări vectoriale peste abstracte pentru a găsi lucrările cu adevărat relevante tematic. Recuperează automat abstractele din lucrări paywalled și răspunde la întrebări de cercetare cu citări exacte.
         </p>
       </div>
 
@@ -96,7 +103,7 @@
           <input 
             type="text" 
             id="search-query" 
-            placeholder="Ex: 'transformer attention mechanisms in medical imaging' sau 'deep reinforcement learning robotics'"
+            placeholder="Ex: 'transformer attention mechanisms in medical imaging' sau 'reinforcement learning robotics'"
             class="w-full pl-12 pr-32 py-3.5 bg-surface-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm sm:text-base shadow-inner"
             required
             autocomplete="off"
@@ -114,17 +121,17 @@
         <!-- Mode & Source Toggles -->
         <div class="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
           <div class="flex items-center gap-3 flex-wrap text-slate-400">
-            <span class="font-medium text-slate-300">Surse active:</span>
-            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> OpenAlex (Global)</span>
-            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> arXiv</span>
-            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> Unpaywall OA Check</span>
-            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> Crossref DOI</span>
+            <span class="font-medium text-slate-300">Pipeline RAG & Surse:</span>
+            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400"></i> IEEE Xplore</span>
+            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> OpenAlex & Crossref</span>
+            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="cpu" class="w-3.5 h-3.5 text-brand-400"></i> Vector Reranking</span>
+            <span class="inline-flex items-center gap-1 text-slate-300"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Abstract Waterfall</span>
           </div>
 
           <div class="flex items-center gap-2">
             <label class="cursor-pointer inline-flex items-center gap-2 text-slate-300 bg-surface-900/60 px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 transition">
-              <input type="checkbox" id="chk-agent-synthesis" checked class="rounded border-slate-700 text-brand-500 focus:ring-brand-500 w-3.5 h-3.5 bg-surface-950">
-              <span class="font-medium flex items-center gap-1"><i data-lucide="bot" class="w-3.5 h-3.5 text-brand-400"></i> Sinteză AI Automată</span>
+              <input type="checkbox" id="chk-semantic-rerank" checked class="rounded border-slate-700 text-brand-500 focus:ring-brand-500 w-3.5 h-3.5 bg-surface-950">
+              <span class="font-medium flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i> Reordonare Semantică Vectorială</span>
             </label>
           </div>
         </div>
@@ -135,9 +142,59 @@
           <button type="button" class="preset-pill px-2.5 py-1 rounded-md bg-surface-800 hover:bg-slate-700 text-slate-300 transition" data-topic="Agentic AI workflows and reasoning architectures">Agentic AI Workflows</button>
           <button type="button" class="preset-pill px-2.5 py-1 rounded-md bg-surface-800 hover:bg-slate-700 text-slate-300 transition" data-topic="Graph Neural Networks in Drug Discovery">GNN Drug Discovery</button>
           <button type="button" class="preset-pill px-2.5 py-1 rounded-md bg-surface-800 hover:bg-slate-700 text-slate-300 transition" data-topic="Quantum error correction surface codes">Quantum Error Correction</button>
-          <button type="button" class="preset-pill px-2.5 py-1 rounded-md bg-surface-800 hover:bg-slate-700 text-slate-300 transition" data-topic="Retrieval-Augmented Generation evaluation metrics">RAG Evaluation</button>
+          <button type="button" class="preset-pill px-2.5 py-1 rounded-md bg-surface-800 hover:bg-slate-700 text-slate-300 transition" data-topic="Retrieval-Augmented Generation evaluation metrics">RAG Evaluation Metrics</button>
         </div>
       </form>
+    </section>
+
+    <!-- RAG Question-Answering Drawer over Abstracts (Interactive Feature) -->
+    <section id="rag-qa-section" class="hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/20 via-surface-900 to-surface-900 p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              RAG pe Abstracte — Interoghează Corpusul de Lucrări
+            </h3>
+            <p class="text-xs text-slate-400">Pune o întrebare specifică despre metodologii, benchmark-uri sau concluzii, iar motorul RAG va extrage evidențele din abstracte.</p>
+          </div>
+        </div>
+        <span class="text-[11px] font-semibold px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Semantic Vector QA</span>
+      </div>
+
+      <!-- Question Form -->
+      <form id="rag-ask-form" class="flex gap-2">
+        <input 
+          type="text" 
+          id="rag-question-input"
+          placeholder="Ex: 'Ce limitări sunt menționate?' sau 'Ce modele sau benchmark-uri de evaluare s-au folosit?'"
+          class="flex-1 px-4 py-2.5 bg-surface-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <button 
+          type="submit" 
+          id="btn-rag-ask"
+          class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-indigo-600/20"
+        >
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Răspunde din Abstracte</span>
+        </button>
+      </form>
+
+      <!-- RAG Answer Display Container -->
+      <div id="rag-answer-container" class="hidden rounded-xl bg-surface-950 p-5 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/80 pb-2">
+          <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Răspuns Fundamentat pe Evidențe
+          </span>
+          <button id="btn-copy-rag-answer" class="text-slate-400 hover:text-white flex items-center gap-1 text-[11px]">
+            <i data-lucide="copy" class="w-3 h-3"></i> Copiază
+          </button>
+        </div>
+        <div id="rag-answer-text" class="prose prose-invert prose-sm max-w-none text-slate-300 text-xs sm:text-sm leading-relaxed"></div>
+      </div>
     </section>
 
     <!-- Filters & Stats Bar -->
@@ -157,52 +214,21 @@
         </div>
       </div>
 
-      <!-- Sorting & Year filter -->
+      <!-- Sorting & Toggle -->
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-1.5 text-slate-400">
           <span>Sortare:</span>
           <select id="sort-select" class="bg-surface-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
-            <option value="relevance">Relevanță</option>
+            <option value="semantic">Scor Semantic (Cosine Similarity)</option>
             <option value="citations">Cele mai citate</option>
             <option value="year_desc">Cele mai recente</option>
           </select>
         </div>
 
-        <button id="btn-toggle-synthesis" class="inline-flex items-center gap-1 text-brand-400 hover:text-brand-300 font-medium">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-          <span>Comută Panou Sinteză</span>
+        <button id="btn-toggle-qa" class="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-medium">
+          <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+          <span>Comută RAG QA</span>
         </button>
-      </div>
-    </section>
-
-    <!-- AI Synthesis Section (Collapsible / Dynamic) -->
-    <section id="ai-synthesis-section" class="hidden rounded-2xl border border-brand-500/30 bg-gradient-to-b from-brand-950/20 via-surface-900 to-surface-900 p-6 shadow-xl relative overflow-hidden">
-      <div class="flex items-start justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 border border-brand-500/30 flex items-center justify-center">
-            <i data-lucide="bot" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              Sinteza Agentului & Perspective Tematice
-              <span id="synthesis-mode-tag" class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30">Algorithmic Insight Engine</span>
-            </h3>
-            <p class="text-xs text-slate-400">Analiză structurată peste lucrările extrase, tendințe de cercetare și metodologii cheie.</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button id="btn-copy-synthesis" class="p-1.5 rounded-lg border border-slate-700 bg-surface-800 hover:bg-slate-700 text-slate-300 transition text-xs flex items-center gap-1 px-2.5" title="Copiază Markdown">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-            <span>Copiază</span>
-          </button>
-        </div>
-      </div>
-
-      <div id="ai-synthesis-content" class="prose prose-invert prose-sm max-w-none text-slate-300 space-y-3 leading-relaxed">
-        <div class="flex items-center gap-3 text-slate-400 py-6 justify-center">
-          <div class="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-          <span>Agentul sintetizează concluziile și topologia citărilor...</span>
-        </div>
       </div>
     </section>
 
@@ -210,42 +236,42 @@
     <div id="loading-state" class="hidden py-16 text-center space-y-4">
       <div class="relative w-14 h-14 mx-auto">
         <div class="w-14 h-14 rounded-full border-4 border-slate-800 border-t-brand-500 animate-spin"></div>
-        <i data-lucide="book-open" class="w-6 h-6 text-brand-400 absolute inset-0 m-auto"></i>
+        <i data-lucide="cpu" class="w-6 h-6 text-brand-400 absolute inset-0 m-auto"></i>
       </div>
       <div>
-        <p class="text-base font-semibold text-white">Interogare baze de date științifice...</p>
-        <p class="text-xs text-slate-400">Scanăm OpenAlex, Crossref, verificăm statusul Open Access cu Unpaywall</p>
+        <p class="text-base font-semibold text-white">Rulare Pipeline Căutare Semantică & RAG...</p>
+        <p class="text-xs text-slate-400">Interogare OpenAlex/Crossref, recuperare abstracte paywalled și calcul similaritate vectorială</p>
       </div>
     </div>
 
-    <!-- Empty State / Welcome banner -->
+    <!-- Empty State -->
     <div id="empty-state" class="text-center py-16 px-4 border border-dashed border-slate-800 rounded-2xl bg-surface-900/40 space-y-4">
       <div class="w-12 h-12 rounded-xl bg-surface-800 text-slate-400 flex items-center justify-center mx-auto">
         <i data-lucide="library" class="w-6 h-6"></i>
       </div>
       <div class="max-w-md mx-auto space-y-1">
-        <h3 class="text-base font-semibold text-white">Gata pentru investigație academică</h3>
+        <h3 class="text-base font-semibold text-white">Gata pentru investigație academică avansată</h3>
         <p class="text-xs text-slate-400">
-          Introdu un subiect, o întrebare de cercetare sau cuvinte cheie mai sus. Agentul va căuta automat lucrările, le va clasifica (Gratuit / Plătit) și va genera un briefing academic.
+          Introdu o temă sau o întrebare de cercetare. Motorul RAG va analiza semantic abstractele fiecărui paper și le va sorta după relevanța conceptuală reală.
         </p>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto pt-4 text-left text-xs">
         <div class="p-3 rounded-lg bg-surface-900 border border-slate-800 space-y-1">
-          <div class="text-brand-400 font-semibold flex items-center gap-1.5"><i data-lucide="unlock" class="w-3.5 h-3.5"></i> Open Access Direct</div>
-          <p class="text-slate-400">Descarcă PDF-uri direct de pe arXiv, PMC sau depozite universitare fără barieră de plată.</p>
+          <div class="text-brand-400 font-semibold flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Căutare Semantică</div>
+          <p class="text-slate-400">Scoruri de similaritate bazate pe abstracte dense (nu doar potrivire oarbă de cuvinte cheie).</p>
         </div>
         <div class="p-3 rounded-lg bg-surface-900 border border-slate-800 space-y-1">
-          <div class="text-amber-400 font-semibold flex items-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Paperuri Paywalled</div>
-          <p class="text-slate-400">Verifică DOI, găsește versiunea liberă via Unpaywall sau aplică prefixul tău EZProxy de la muncă.</p>
+          <div class="text-indigo-400 font-semibold flex items-center gap-1.5"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> RAG pe Abstracte</div>
+          <p class="text-slate-400">Întreabă corpusul despre metodologii și primește răspunsuri citate formal.</p>
         </div>
         <div class="p-3 rounded-lg bg-surface-900 border border-slate-800 space-y-1">
-          <div class="text-indigo-400 font-semibold flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i> Sinteză AI Integrată</div>
-          <p class="text-slate-400">Funcționează instant fără configurare sau opțional conectat cu cheia ta Gemini / OpenAI.</p>
+          <div class="text-emerald-400 font-semibold flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Abstract Recovery</div>
+          <p class="text-slate-400">Recuperează automat abstractele lipsă din lucrările paywalled prin Europe PMC & Crossref.</p>
         </div>
       </div>
     </div>
 
-    <!-- Paper Results Grid / List -->
+    <!-- Paper Results Grid -->
     <section id="results-container" class="space-y-4">
       <!-- Dynamic Paper Cards injected here -->
     </section>
@@ -260,6 +286,7 @@
         <div class="space-y-1 pr-6">
           <div class="flex items-center gap-2 flex-wrap">
             <span id="modal-oa-badge"></span>
+            <span id="modal-semantic-badge" class="text-xs px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20 font-mono"></span>
             <span id="modal-year-badge" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700"></span>
             <span id="modal-citations-badge" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700"></span>
           </div>
@@ -271,7 +298,7 @@
         </button>
       </div>
 
-      <!-- Modal Body (Scrollable) -->
+      <!-- Modal Body -->
       <div class="p-6 overflow-y-auto space-y-5 text-sm">
         <!-- Venue & Publisher -->
         <div class="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
@@ -286,12 +313,12 @@
           <div id="modal-concepts" class="flex flex-wrap gap-1.5"></div>
         </div>
 
-        <!-- Abstract -->
+        <!-- Abstract & Source -->
         <div>
           <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Rezumat / Abstract</h4>
-              <span id="modal-abstract-source" class="hidden text-[10px] px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-brand-400 font-mono"></span>
+              <span id="modal-abstract-source" class="text-[10px] px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-brand-400 font-mono"></span>
             </div>
             <button id="btn-force-abstract" class="text-[11px] text-brand-400 hover:text-brand-300 flex items-center gap-1 font-medium transition">
               <i data-lucide="refresh-cw" class="w-3 h-3"></i>
@@ -305,7 +332,7 @@
         <div id="modal-unpaywall-box" class="p-4 rounded-xl bg-surface-950 border border-slate-800 space-y-2">
           <div class="flex items-center justify-between text-xs">
             <span class="font-semibold text-slate-300 flex items-center gap-1.5">
-              <i data-lucide="shield-check" class="w-4 h-4 text-brand-400"></i> Unpaywall Verification
+              <i data-lucide="shield-check" class="w-4 h-4 text-brand-400"></i> Verificare Unpaywall Live
             </span>
             <span id="modal-unpaywall-status" class="font-medium text-slate-400">Verificare...</span>
           </div>
@@ -353,7 +380,7 @@
       <div class="p-6 border-b border-slate-800 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <i data-lucide="sliders" class="w-5 h-5 text-brand-400"></i>
-          <h3 class="text-base font-bold text-white">Configurare & Acces la Muncă</h3>
+          <h3 class="text-base font-bold text-white">Configurare & Conexiune Backend</h3>
         </div>
         <button id="btn-close-settings" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -361,96 +388,75 @@
       </div>
 
       <div class="p-6 space-y-5 text-sm overflow-y-auto max-h-[75vh]">
-        <!-- Institutional Proxy -->
+        <!-- Backend API URL -->
         <div class="space-y-2">
+          <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider">
+            Adresă Backend API (FastAPI)
+          </label>
+          <input 
+            type="text" 
+            id="setting-backend-url" 
+            placeholder="http://localhost:8000 sau /api" 
+            class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none font-mono"
+          />
+          <span class="text-[11px] text-slate-500 block">Dacă rulezi cu Docker (`docker-compose up`), folosește `http://localhost:8000`. Dacă backend-ul este oprit, se va folosi fallback-ul nativ din browser.</span>
+        </div>
+
+        <!-- Institutional Proxy -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
           <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider">
             Prefix Proxy Instituțional (EZProxy / Muncă)
           </label>
-          <p class="text-xs text-slate-400">
-            Dacă ești pe laptopul personal sau acasă și vrei să accesezi paperuri ScienceDirect/IEEE abonate de universitate/companie, introdu prefixul proxy-ului bibliotecii.
-          </p>
           <input 
             type="text" 
             id="setting-ezproxy" 
-            placeholder="Ex: https://ezproxy.biblioteca.tua.ro/login?url= sau https://proxy.institution.edu/login?url=" 
+            placeholder="Ex: https://ezproxy.biblioteca.tua.ro/login?url=" 
             class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none"
           />
-          <span class="text-[11px] text-slate-500 block">Dacă lași liber, linkurile publisher vor merge direct pe adresa oficială (ideal când ești deja conectat pe rețeaua/VPN-ul de la muncă).</span>
         </div>
 
-        <!-- Optional Gemini / OpenAI API Key for AI synthesis -->
+        <!-- Gemini API Key -->
         <div class="space-y-2 pt-2 border-t border-slate-800">
           <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider">
-            Cheie API Gemini (Opțional pentru Sinteză LLM Avansată)
+            Google Gemini API Key (Opțional pentru RAG Generativ)
           </label>
-          <p class="text-xs text-slate-400">
-            Aplicația are un motor de sinteză algoritmică nativ ce funcționează gratuit fără cheie. Dacă adaugi o cheie Google Gemini (gratuită din Google AI Studio), sinteza va folosi Gemini 1.5 Flash direct din browserul tău.
-          </p>
           <input 
             type="password" 
             id="setting-gemini-key" 
             placeholder="AIzaSy..." 
             class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none font-mono"
           />
-          <span class="text-[11px] text-emerald-400/90 block">Stocată doar în browserul tău local (localStorage). Nu este trimisă către niciun server terț.</span>
+          <span class="text-[11px] text-emerald-400/90 block">Stocată doar local. Permite generarea de răspunsuri narative sintetizate peste abstracte.</span>
         </div>
 
-        <!-- Semantic Scholar API Key (Optional) -->
-        <div class="space-y-2 pt-2 border-t border-slate-800">
-          <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider">
-            Semantic Scholar API Key (Opțional)
-          </label>
-          <input 
-            type="password" 
-            id="setting-s2-key" 
-            placeholder="Cheie opțională pentru rate-limits mai mari pe Semantic Scholar" 
-            class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none font-mono"
-          />
-        </div>
-
-        <!-- Elsevier Scopus / ScienceDirect API Key (For paywalled papers) -->
+        <!-- IEEE Xplore API Key -->
         <div class="space-y-2 pt-2 border-t border-slate-800">
           <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider flex items-center justify-between">
-            <span>Elsevier API Key (Opțional pentru Abstracte Paywalled)</span>
-            <span class="text-[10px] text-amber-400 font-normal">dev.elsevier.com</span>
+            <span>IEEE Xplore API Key (Căutare Directă & Abstracte IEEE)</span>
+            <span class="text-[10px] text-blue-400 font-normal">developer.ieee.org</span>
           </label>
           <p class="text-[11px] text-slate-400">
-            Dacă lucrezi cu articole ScienceDirect / Cell / Lancet blocate de paywall, o cheie gratuită de dezvoltator Elsevier permite extragerea oficială a abstractului prin Scopus Abstract Retrieval API.
+            Dacă deții o cheie de dezvoltator de pe developer.ieee.org, activează interogarea directă a depozitului IEEE Xplore și extragerea abstractelor pentru conferințe și tranzacții.
           </p>
           <input 
             type="password" 
-            id="setting-elsevier-key" 
-            placeholder="Cheie API gratuită Elsevier" 
+            id="setting-ieee-key" 
+            placeholder="Cheie API IEEE Xplore" 
             class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none font-mono"
           />
         </div>
 
-        <!-- Springer Nature API Key (Optional) -->
+        <!-- Elsevier Key -->
         <div class="space-y-2 pt-2 border-t border-slate-800">
-          <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider flex items-center justify-between">
-            <span>Springer Nature API Key (Opțional)</span>
-            <span class="text-[10px] text-amber-400 font-normal">dev.springernature.com</span>
+          <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider">
+            Elsevier API Key (Opțional pentru Abstracte Paywalled)
           </label>
           <input 
             type="password" 
-            id="setting-springer-key" 
-            placeholder="Cheie API gratuită Springer Nature" 
+            id="setting-elsevier-key" 
+            placeholder="Cheie API de pe dev.elsevier.com" 
             class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none font-mono"
           />
-        </div>
-
-        <!-- Contact Email for Polite APIs -->
-        <div class="space-y-2 pt-2 border-t border-slate-800">
-          <label class="block font-semibold text-slate-200 text-xs uppercase tracking-wider">
-            Adresă de Email (Polite Pool Unpaywall / OpenAlex)
-          </label>
-          <input 
-            type="email" 
-            id="setting-polite-email" 
-            placeholder="adresa.ta@exemplu.ro" 
-            class="w-full px-3 py-2 bg-surface-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-          />
-          <span class="text-[11px] text-slate-500 block">Unpaywall și OpenAlex solicită un email politeness pentru a oferi viteze de răspuns prioritare.</span>
         </div>
       </div>
 
@@ -465,11 +471,11 @@
   <!-- Footer -->
   <footer class="border-t border-slate-900 bg-surface-950 py-6 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p>ScholarAgent &copy; 2026 — Construit pentru cercetare academică de precizie.</p>
+      <p>ScholarAgent &copy; 2026 — Semantic Academic Search & RAG Engine</p>
       <div class="flex items-center gap-4 text-slate-400">
-        <span>Powered by OpenAlex, Unpaywall & Crossref</span>
+        <span>FastAPI & Vector Embeddings</span>
         <span>&bull;</span>
-        <span>Static Web App (Zero Server / GitHub Pages Ready)</span>
+        <span>OpenAlex & Unpaywall & Crossref</span>
       </div>
     </div>
   </footer>

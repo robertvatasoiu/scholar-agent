@@ -60,7 +60,13 @@
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.8), 0 8px 10px -6px rgba(14, 165, 233, 0.1);
 }
 
-/* Typography for AI synthesis rendered markdown */
+.paper-card.highlighted-rag {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.4);
+  background-color: rgba(20, 184, 166, 0.05);
+}
+
+/* Typography for AI & RAG synthesis rendered markdown */
 .prose h1, .prose h2, .prose h3 {
   color: #f1f5f9;
   font-weight: 700;
@@ -108,4 +114,25 @@
   font-size: 0.85em;
   color: #2dd4bf;
   border: 1px solid #1e293b;
+}
+
+/* Citation chip tag */
+.citation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #14b8a6;
+  background-color: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.citation-chip:hover {
+  background-color: rgba(20, 184, 166, 0.25);
+  border-color: #14b8a6;
 }

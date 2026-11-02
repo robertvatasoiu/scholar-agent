@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  scholar-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scholar-agent-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - POLITE_EMAIL=academic.researcher@scholaragent.app
+      - IEEE_API_KEY=${IEEE_API_KEY:-}
+      - ELSEVIER_API_KEY=${ELSEVIER_API_KEY:-}
+      - SPRINGER_API_KEY=${SPRINGER_API_KEY:-}
+      - S2_API_KEY=${S2_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./backend/app:/app/app
+      - ./frontend:/frontend
+    restart: unless-stopped
