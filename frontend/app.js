@@ -418,7 +418,14 @@ function highlightPaperByRank(rank) {
   const index = rank - 1;
   const paper = state.filteredPapers[index];
   if (paper) {
-    openPaperModal(paper.id);
+    const el = document.getElementById(`paper-card-${paper.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('highlighted');
+      setTimeout(() => el.classList.remove('highlighted'), 2500);
+    } else {
+      openPaperModal(paper.id);
+    }
   }
 }
 
@@ -470,9 +477,8 @@ function renderPaperCards() {
 
   if (!state.filteredPapers.length) {
     container.innerHTML = `
-      <div class="text-center py-12 px-4 rounded-xl bg-surface-900 border border-slate-800 text-slate-400">
-        <i data-lucide="search-x" class="w-8 h-8 text-slate-500 mx-auto mb-2"></i>
-        <p class="font-medium text-slate-300">Nu a fost găsit niciun articol cu acest filtru.</p>
+      <div class="text-center py-12 px-4 rounded-lg border border-zinc-800 text-zinc-400">
+        <p class="text-xs text-zinc-400">Nu a fost găsit niciun articol cu acest filtru.</p>
       </div>
     `;
     if (window.lucide) window.lucide.createIcons();
@@ -481,61 +487,64 @@ function renderPaperCards() {
 
   container.innerHTML = state.filteredPapers.map((paper, idx) => {
     const oaBadge = paper.isOpenAccess
-      ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i data-lucide="unlock" class="w-3 h-3"></i> Open Access</span>`
-      : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"><i data-lucide="lock" class="w-3 h-3"></i> Paywalled</span>`;
+      ? `<span class="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium"><i data-lucide="unlock" class="w-3 h-3"></i> Open Access</span>`
+      : `<span class="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-medium"><i data-lucide="lock" class="w-3 h-3 text-zinc-500"></i> Paywalled</span>`;
 
     const semanticScoreBadge = paper.semanticScore !== null && paper.semanticScore !== undefined
-      ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/30 font-mono">
-           <i data-lucide="sparkles" class="w-3 h-3 text-brand-400"></i> ${Math.round(paper.semanticScore * 100)}% Relevanță Semantică
+      ? `<span class="text-[11px] px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/80 text-zinc-300 font-mono">
+           Relevanță: ${Math.round(paper.semanticScore * 100)}%
          </span>`
       : '';
 
     const conceptsHtml = (paper.concepts || []).slice(0, 3).map(c => 
-      `<span class="px-2 py-0.5 rounded bg-surface-950 text-slate-400 border border-slate-800 text-[11px]">${escapeHtml(c)}</span>`
+      `<span class="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 text-[11px]">${escapeHtml(c)}</span>`
     ).join('');
 
-    const formattedAuthors = paper.authors.slice(0, 3).join(', ') + (paper.authors.length > 3 ? ' et al.' : '');
+    const formattedAuthors = paper.authors.slice(0, 4).join(', ') + (paper.authors.length > 4 ? ' et al.' : '');
 
     return `
-      <article id="paper-card-${paper.id}" class="paper-card bg-surface-900 rounded-xl border border-slate-800 p-5 space-y-3 cursor-pointer" onclick="openPaperModal('${paper.id}')">
-        <div class="flex items-start justify-between gap-4">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-slate-500">#${idx+1}</span>
+      <article id="paper-card-${paper.id}" class="paper-item space-y-2.5 cursor-pointer" onclick="openPaperModal('${paper.id}')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1 flex-1">
+            <div class="flex items-center gap-2 flex-wrap text-xs">
+              <span class="text-zinc-500 font-mono text-[11px]">#${idx+1}</span>
               ${oaBadge}
               ${semanticScoreBadge}
-              <span class="text-xs px-2 py-0.5 rounded bg-surface-950 text-slate-400 border border-slate-800">${paper.year}</span>
-              <span class="text-xs px-2 py-0.5 rounded bg-surface-950 text-brand-400 border border-slate-800 flex items-center gap-1">
-                <i data-lucide="quote" class="w-2.5 h-2.5"></i> ${paper.citations.toLocaleString()} citări
-              </span>
+              <span class="text-zinc-500">&bull;</span>
+              <span class="text-zinc-400">${paper.year}</span>
+              <span class="text-zinc-500">&bull;</span>
+              <span class="text-zinc-400">${paper.citations.toLocaleString()} citări</span>
             </div>
-            <h3 class="text-base font-bold text-white hover:text-brand-400 transition leading-snug pt-1">
+            <h3 class="text-sm font-semibold text-zinc-100 hover:text-blue-400 transition leading-snug">
               ${escapeHtml(paper.title)}
             </h3>
-            <p class="text-xs text-slate-400 line-clamp-1">
-              ${escapeHtml(formattedAuthors)} &bull; <span class="text-slate-300 font-medium">${escapeHtml(paper.venue)}</span>
+            <p class="text-xs text-zinc-400">
+              <span>${escapeHtml(formattedAuthors)}</span>
+              <span class="text-zinc-600">&bull;</span>
+              <span class="text-zinc-300">${escapeHtml(paper.venue)}</span>
+              ${paper.doi ? `<span class="text-zinc-600">&bull;</span> <span class="font-mono text-[11px] text-zinc-500">${escapeHtml(paper.doi)}</span>` : ''}
             </p>
           </div>
         </div>
 
-        <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+        <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
           ${escapeHtml(paper.abstract)}
         </p>
 
-        <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60 text-xs">
-          <div class="flex items-center gap-1.5 flex-wrap">
+        <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/80 text-xs">
+          <div class="flex items-center gap-1 flex-wrap">
             ${conceptsHtml}
           </div>
           
           <div class="flex items-center gap-2">
             ${paper.isOpenAccess && paper.oaPdfUrl ? `
-              <a href="${paper.oaPdfUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white transition text-xs font-medium flex items-center gap-1 border border-emerald-500/30">
+              <a href="${paper.oaPdfUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 text-xs transition flex items-center gap-1 font-medium">
                 <i data-lucide="file-text" class="w-3 h-3"></i> PDF
               </a>
             ` : ''}
-            <button class="text-xs text-slate-400 hover:text-brand-400 flex items-center gap-1 font-medium transition">
-              <span>Inspectează</span>
-              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            <button class="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition">
+              <span>Detalii</span>
+              <i data-lucide="chevron-right" class="w-3 h-3"></i>
             </button>
           </div>
         </div>
